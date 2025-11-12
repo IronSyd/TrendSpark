@@ -109,7 +109,7 @@ def job_ingest_and_rank(
             now = datetime.utcnow()
             cutoff = now - timedelta(minutes=recency_minutes)
             recent_cutoff = datetime.utcnow() - timedelta(hours=24)
-            posts = top_conversations(limit=top_limit)
+            posts = top_conversations(limit=top_limit, min_created_at=recent_cutoff)
             fallback_candidate = max(
                 (p for p in posts if as_utc_naive(p.created_at) and as_utc_naive(p.created_at) >= recent_cutoff),
                 key=_total_engagement,
