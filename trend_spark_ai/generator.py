@@ -1,6 +1,6 @@
 from __future__ import annotations
 from datetime import datetime
-from typing import Sequence
+from typing import Any, Sequence, cast
 import logging
 import json
 from tenacity import retry, stop_after_attempt, wait_exponential
@@ -60,7 +60,7 @@ def craft_replies_for_post(post: Post, tones: Sequence[str]) -> list[dict]:
     tone_str = ", ".join(tone_sequence)
     user = f"Post: {post.text}\n\nBrand: {voice}\nTones: {tone_str}\nReturn JSON array of objects: {{tone, reply}}."
 
-    schema = {
+    schema: dict[str, Any] = {
         "type": "json_schema",
         "json_schema": {
             "name": "reply_suggestions",
@@ -92,7 +92,7 @@ def craft_replies_for_post(post: Post, tones: Sequence[str]) -> list[dict]:
             {"role": "user", "content": user},
         ],
         temperature=0.9,
-        response_format=schema,
+        response_format=cast(Any, schema),
     )
     _record_openai("reply_suggestions", resp)
     content = resp.choices[0].message.content or "{}"

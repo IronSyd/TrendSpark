@@ -110,27 +110,30 @@ def job_ingest_and_rank(
             cutoff = now - timedelta(minutes=recency_minutes)
             recent_cutoff = datetime.utcnow() - timedelta(hours=24)
             posts = top_conversations(limit=top_limit, min_created_at=recent_cutoff)
+
+            def _recent_posts():
+                for post in posts:
+                    created = as_utc_naive(post.created_at)
+                    if created is None:
+                        continue
+                    if created >= recent_cutoff:
+                        yield post
+
             fallback_candidate = max(
-                (
-                    p
-                    for p in posts
-                    if as_utc_naive(p.created_at)
-                    and as_utc_naive(p.created_at) >= recent_cutoff
-                ),
+                _recent_posts(),
                 key=_total_engagement,
                 default=None,
             )
-            fallback_candidate = max(posts, key=_total_engagement, default=None)
 
             summary_lines: list[str] = []
-            payload_posts: list[dict] = []
+            payload_posts: list[dict[str, Any]] = []
 
             with session_scope() as s:
                 for post in posts:
                     if not post.trending:
                         continue
                     ts = as_utc_naive(post.trending_since)
-                    if not ts:
+                    if ts is None:
                         continue
                     if ts < cutoff:
                         continue
@@ -212,6 +215,7 @@ def job_ingest_and_rank(
                         db_post.last_alerted_at = now
                         db_post.last_alerted_virality = post.virality_score
 
+            payload: dict[str, Any]
             if payload_posts:
                 alerts_sent = len(payload_posts)
                 header = f"Engagement suggestions ({now.strftime('%H:%M')}):"

@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Iterable
+from typing import Any, Iterator
 from datetime import datetime, timezone
 import logging
 
@@ -8,7 +8,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 try:
     import praw
 except Exception:
-    praw = None  # type: ignore
+    praw = None
 
 from ..config import settings
 
@@ -17,21 +17,21 @@ log = logging.getLogger(__name__)
 
 def fetch_reddit_trending(
     keywords: list[str], limit_per_sub: int = 25
-) -> Iterable[dict]:
+) -> Iterator[dict[str, Any]]:
     """Fetch hot posts across relevant subreddits for given keywords."""
     if not settings.reddit_ingest_enabled:
         log.info("Reddit ingest disabled via configuration")
-        return []
+        return
     if not (
         settings.reddit_client_id
         and settings.reddit_client_secret
         and settings.reddit_user_agent
     ):
         log.info("Reddit credentials not set; skipping Reddit ingestion")
-        return []
+        return
     if praw is None:
         log.warning("praw not available; skipping Reddit ingestion")
-        return []
+        return
 
     reddit = praw.Reddit(
         client_id=settings.reddit_client_id,

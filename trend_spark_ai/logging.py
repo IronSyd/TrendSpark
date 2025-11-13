@@ -94,8 +94,8 @@ class CorrelationFilter(logging.Filter):
 
 
 def configure_logging(level: str | None = None) -> None:
-    level = level or os.environ.get("LOG_LEVEL", "INFO")
-    numeric = logging.getLevelName(level.upper())
+    configured_level = (level or os.environ.get("LOG_LEVEL") or "INFO").upper()
+    numeric = logging.getLevelName(configured_level)
     root = logging.getLogger()
     root.setLevel(numeric)
     for handler in list(root.handlers):

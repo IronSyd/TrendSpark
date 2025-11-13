@@ -13,54 +13,51 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    openai_api_key: str | None = Field(default=None, env="OPENAI_API_KEY")
-    x_bearer_token: str | None = Field(default=None, env="X_BEARER_TOKEN")
-    x_consumer_key: str | None = Field(default=None, env="X_CONSUMER_KEY")
-    x_consumer_secret: str | None = Field(default=None, env="X_CONSUMER_SECRET")
-    x_access_token: str | None = Field(default=None, env="X_ACCESS_TOKEN")
-    x_access_token_secret: str | None = Field(default=None, env="X_ACCESS_SECRET")
-    x_trends_woeid: int = Field(default=1, env="X_TRENDS_WOEID")
+    openai_api_key: str | None = Field(default=None)
+    x_bearer_token: str | None = Field(default=None)
+    x_consumer_key: str | None = Field(default=None)
+    x_consumer_secret: str | None = Field(default=None)
+    x_access_token: str | None = Field(default=None)
+    x_access_token_secret: str | None = Field(default=None)
+    x_trends_woeid: int = Field(default=1)
 
-    reddit_client_id: str | None = Field(default=None, env="REDDIT_CLIENT_ID")
-    reddit_client_secret: str | None = Field(default=None, env="REDDIT_CLIENT_SECRET")
-    reddit_user_agent: str | None = Field(default=None, env="REDDIT_USER_AGENT")
+    reddit_client_id: str | None = Field(default=None)
+    reddit_client_secret: str | None = Field(default=None)
+    reddit_user_agent: str | None = Field(default=None)
 
-    telegram_bot_token: str | None = Field(default=None, env="TELEGRAM_BOT_TOKEN")
-    telegram_chat_id: str | None = Field(default=None, env="TELEGRAM_CHAT_ID")
+    telegram_bot_token: str | None = Field(default=None)
+    telegram_chat_id: str | None = Field(default=None)
 
-    database_url: PostgresDsn | str = Field(
-        default="sqlite:///trend_spark.db", env="DATABASE_URL"
-    )
+    database_url: PostgresDsn | str = Field(default="sqlite:///trend_spark.db")
 
-    keywords: List[str] = Field(default_factory=list, env="KEYWORDS")
+    keywords: List[str] = Field(default_factory=list)
     tone_priorities: List[str] = Field(
         default_factory=lambda: ["witty", "helpful", "contrarian", "informative"],
-        env="TONE_PRIORITIES",
     )
-    watchlist: List[str] = Field(default_factory=list, env="WATCHLIST")
-    x_stream_rules: List[str] = Field(default_factory=list, env="X_STREAM_RULES")
-    api_tokens: List[str] = Field(default_factory=list, env="API_TOKENS")
+    watchlist: List[str] = Field(default_factory=list)
+    x_stream_rules: List[str] = Field(default_factory=list)
+    api_tokens: List[str] = Field(default_factory=list)
     api_rate_limits: List[str] = Field(
-        default_factory=lambda: ["200/minute", "1000/day"], env="API_RATE_LIMITS"
+        default_factory=lambda: ["200/minute", "1000/day"]
     )
 
-    niche_default: str | None = Field(default=None, env="NICHE")
-    cors_allow_origins: List[AnyHttpUrl] = Field(
+    niche_default: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("NICHE", "NICHE_DEFAULT"),
+    )
+    cors_allow_origins: list[str] = Field(
         default_factory=lambda: [
             "http://localhost:5173",
             "http://127.0.0.1:5173",
         ],
-        env="CORS_ALLOW_ORIGINS",
     )
 
-    x_stream_enabled: bool = Field(default=False, env="X_STREAM_ENABLED")
-    x_ingest_enabled: bool = Field(default=True, env="X_INGEST_ENABLED")
-    reddit_ingest_enabled: bool = Field(default=True, env="REDDIT_INGEST_ENABLED")
-    ideas_time_hour: int = Field(default=8, env="IDEAS_TIME_HOUR")
-    alert_recency_minutes: int = Field(default=30, env="ALERT_RECENCY_MINUTES")
-    scheduler_url: AnyHttpUrl = Field(
-        default="http://localhost:9000", env="SCHEDULER_URL"
-    )
+    x_stream_enabled: bool = Field(default=False)
+    x_ingest_enabled: bool = Field(default=True)
+    reddit_ingest_enabled: bool = Field(default=True)
+    ideas_time_hour: int = Field(default=8)
+    alert_recency_minutes: int = Field(default=30)
+    scheduler_url: AnyHttpUrl | str = Field(default="http://localhost:9000")
     trending_min_likes: int = Field(
         default=5,
         validation_alias=AliasChoices("TREND_MIN_LIKES", "TRENDING_MIN_LIKES"),
@@ -77,15 +74,14 @@ class Settings(BaseSettings):
             "TREND_MIN_ENGAGEMENT_MIX",
             "TRENDING_MIN_ENGAGEMENT_MIX",
         ),
-        env="TREND_MIN_ENGAGEMENT",
     )
-    trend_author_scale_min: float = Field(default=0.5, env="TREND_AUTHOR_SCALE_MIN")
-    trend_author_scale_max: float = Field(default=2.5, env="TREND_AUTHOR_SCALE_MAX")
-    profile_match_bonus: float = Field(default=0.1, env="PROFILE_MATCH_BONUS")
-    trending_hashtag_bonus: float = Field(default=0.08, env="TRENDING_HASHTAG_BONUS")
-    recency_bonus_minutes: int = Field(default=10, env="RECENCY_BONUS_MINUTES")
-    recency_bonus_amount: float = Field(default=0.05, env="RECENCY_BONUS_AMOUNT")
-    trend_expire_minutes: int = Field(default=60, env="TREND_EXPIRE_MINUTES")
+    trend_author_scale_min: float = Field(default=0.5)
+    trend_author_scale_max: float = Field(default=2.5)
+    profile_match_bonus: float = Field(default=0.1)
+    trending_hashtag_bonus: float = Field(default=0.08)
+    recency_bonus_minutes: int = Field(default=10)
+    recency_bonus_amount: float = Field(default=0.05)
+    trend_expire_minutes: int = Field(default=60)
 
     model_config = SettingsConfigDict(
         env_file=".env",

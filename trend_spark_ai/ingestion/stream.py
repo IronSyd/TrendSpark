@@ -4,11 +4,7 @@ import logging
 import random
 import threading
 import time
-
-try:
-    import tweepy
-except Exception:  # pragma: no cover - optional dependency
-    tweepy = None  # type: ignore
+from typing import Any
 
 from ..config import settings
 from ..db import session_scope
@@ -20,6 +16,41 @@ from .ingest import upsert_post
 
 
 log = logging.getLogger(__name__)
+
+StreamingClientBase: type[Any]
+
+try:
+    import tweepy
+except Exception:  # pragma: no cover - optional dependency
+    tweepy = None
+
+if tweepy is not None:
+    StreamingClientBase = tweepy.StreamingClient
+else:
+
+    class _StreamingClientFallback:
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            raise RuntimeError("tweepy not installed")
+
+        def filter(self, *args: Any, **kwargs: Any) -> None:
+            raise RuntimeError("tweepy not installed")
+
+        def get_tweet(self, *args: Any, **kwargs: Any):
+            raise RuntimeError("tweepy not installed")
+
+        def get_user(self, *args: Any, **kwargs: Any):
+            raise RuntimeError("tweepy not installed")
+
+        def disconnect(self) -> None:
+            pass
+
+        def on_errors(self, errors: Any) -> None:
+            pass
+
+        def on_connection_error(self) -> None:
+            pass
+
+    StreamingClientBase = _StreamingClientFallback
 
 
 _stream_thread: threading.Thread | None = None
@@ -91,130 +122,126 @@ def _ensure_rules(client: "TrendStream") -> bool:
     return True
 
 
-if tweepy is not None:  # pragma: no branch
+class TrendStream(StreamingClientBase):
+    def __init__(self) -> None:
+        super().__init__(
+            bearer_token=settings.x_bearer_token,
+            wait_on_rate_limit=True,
+        )
 
-    class TrendStream(tweepy.StreamingClient):  # type: ignore[misc]
-        def __init__(self) -> None:
-            super().__init__(
-                bearer_token=settings.x_bearer_token,
-                wait_on_rate_limit=True,
-            )
+    def on_tweet(self, tweet: "tweepy.Tweet") -> None:
+        metrics = getattr(tweet, "public_metrics", None) or {}
+        base_tweet = tweet
+        author_id = getattr(tweet, "author_id", None)
+        username = None
 
-        def on_tweet(self, tweet: tweepy.Tweet) -> None:  # type: ignore[name-defined]
-            metrics = getattr(tweet, "public_metrics", None) or {}
-            base_tweet = tweet
-            author_id = getattr(tweet, "author_id", None)
-            username = None
-
-            if getattr(tweet, "referenced_tweets", None):
-                for ref in tweet.referenced_tweets:
-                    if getattr(ref, "type", None) == "retweeted":
-                        try:
-                            response = self.get_tweet(
-                                ref.id,
-                                expansions=["author_id"],
-                                tweet_fields=["created_at", "public_metrics"],
-                                user_fields=["username"],
-                            )
-                            if response and response.data:
-                                original = response.data
-                                base_tweet = original
-                                metrics = (
-                                    getattr(original, "public_metrics", None) or metrics
-                                )
-                                includes = getattr(response, "includes", None)
-                                users = []
-                                if includes:
-                                    if isinstance(includes, dict):
-                                        users = includes.get("users", []) or []
-                                    else:
-                                        users = getattr(includes, "users", []) or []
-                                for user in users:
-                                    try:
-                                        uid = str(getattr(user, "id"))
-                                        uname = getattr(user, "username", None)
-                                        if uid and uname:
-                                            _user_cache[uid] = uname
-                                    except Exception:
-                                        continue
-                        except Exception:
-                            pass
-                        break
-
-            if author_id is not None:
-                key = str(author_id)
-                if key in _user_cache:
-                    username = _user_cache[key]
-                else:
+        if getattr(tweet, "referenced_tweets", None):
+            for ref in tweet.referenced_tweets:
+                if getattr(ref, "type", None) == "retweeted":
                     try:
-                        user = self.get_user(id=author_id, user_fields=["username"])
-                        if user and user.data and getattr(user.data, "username", None):
-                            username = user.data.username
-                            _user_cache[key] = username
+                        response = self.get_tweet(
+                            ref.id,
+                            expansions=["author_id"],
+                            tweet_fields=["created_at", "public_metrics"],
+                            user_fields=["username"],
+                        )
+                        if response and response.data:
+                            original = response.data
+                            base_tweet = original
+                            metrics = (
+                                getattr(original, "public_metrics", None) or metrics
+                            )
+                            includes = getattr(response, "includes", None)
+                            users_data: list[Any] = []
+                            if includes:
+                                if isinstance(includes, dict):
+                                    users_data = list(includes.get("users", []) or [])
+                                else:
+                                    users_data = list(
+                                        getattr(includes, "users", []) or []
+                                    )
+                            for user in users_data:
+                                try:
+                                    uid = str(getattr(user, "id"))
+                                    uname = getattr(user, "username", None)
+                                    if uid and uname:
+                                        _user_cache[uid] = uname
+                                except Exception:
+                                    continue
                     except Exception:
-                        username = None
+                        pass
+                    break
 
-            url_username = username or (
-                str(author_id) if author_id is not None else None
-            )
-            if url_username:
-                post_url = f"https://x.com/{url_username}/status/{base_tweet.id}"
+        if author_id is not None:
+            key = str(author_id)
+            if key in _user_cache:
+                username = _user_cache[key]
             else:
-                post_url = f"https://x.com/status/{base_tweet.id}"
-            data = {
-                "platform": "x",
-                "post_id": str(base_tweet.id),
-                "text": getattr(base_tweet, "text", None) or tweet.text,
-                "author": username
-                or (str(author_id) if author_id is not None else None),
-                "created_at": getattr(base_tweet, "created_at", None),
-                "like_count": int(metrics.get("like_count", 0)),
-                "reply_count": int(metrics.get("reply_count", 0)),
-                "repost_count": int(metrics.get("retweet_count", 0)),
-                "quote_count": int(metrics.get("quote_count", 0)),
-                "view_count": int(metrics.get("impression_count", 0)),
-                "url": post_url,
-            }
+                try:
+                    user = self.get_user(id=author_id, user_fields=["username"])
+                    if user and user.data and getattr(user.data, "username", None):
+                        username = user.data.username
+                        _user_cache[key] = username
+                except Exception:
+                    username = None
 
-            trending_payload: dict | None = None
-            with session_scope() as session:
-                post = upsert_post(session, data)
-                virality, velocity = compute_scores_for_post(post)
-                was_trending = post.trending
-                post.virality_score = virality
-                post.velocity_score = velocity
-                engagement_total = (
-                    (post.like_count or 0)
-                    + (post.reply_count or 0)
-                    + (post.repost_count or 0)
-                )
-                post.trending = engagement_total >= settings.trending_min_engagement_mix
+        url_username = username or (
+            str(author_id) if author_id is not None else None
+        )
+        if url_username:
+            post_url = f"https://x.com/{url_username}/status/{base_tweet.id}"
+        else:
+            post_url = f"https://x.com/status/{base_tweet.id}"
+        data = {
+            "platform": "x",
+            "post_id": str(base_tweet.id),
+            "text": getattr(base_tweet, "text", None) or tweet.text,
+            "author": username
+            or (str(author_id) if author_id is not None else None),
+            "created_at": getattr(base_tweet, "created_at", None),
+            "like_count": int(metrics.get("like_count", 0)),
+            "reply_count": int(metrics.get("reply_count", 0)),
+            "repost_count": int(metrics.get("retweet_count", 0)),
+            "quote_count": int(metrics.get("quote_count", 0)),
+            "view_count": int(metrics.get("impression_count", 0)),
+            "url": post_url,
+        }
 
-                if post.trending and not was_trending:
-                    trending_payload = {
-                        "url": post.url,
-                        "text": post.text,
-                        "score": virality,
-                    }
+        trending_payload: dict | None = None
+        with session_scope() as session:
+            post = upsert_post(session, data)
+            virality, velocity = compute_scores_for_post(post)
+            was_trending = post.trending
+            post.virality_score = virality
+            post.velocity_score = velocity
+            engagement_total = (
+                (post.like_count or 0)
+                + (post.reply_count or 0)
+                + (post.repost_count or 0)
+            )
+            post.trending = engagement_total >= settings.trending_min_engagement_mix
 
-            if trending_payload:
-                snippet = (
-                    trending_payload["url"] or (trending_payload["text"] or "")[:200]
-                )
-                message = f"🔥 Stream alert {trending_payload['score']:.2f}: {snippet}"
-                send_telegram_message(message)
+            if post.trending and not was_trending:
+                trending_payload = {
+                    "url": post.url,
+                    "text": post.text,
+                    "score": virality,
+                }
 
-        def on_errors(self, errors):  # type: ignore[override]
-            log.error("X stream error: %s", errors)
-            return super().on_errors(errors)
+        if trending_payload:
+            snippet = (
+                trending_payload["url"] or (trending_payload["text"] or "")[:200]
+            )
+            message = f"🔥 Stream alert {trending_payload['score']:.2f}: {snippet}"
+            send_telegram_message(message)
 
-        def on_connection_error(self):  # type: ignore[override]
-            log.warning("X stream connection error; reconnecting")
-            self.disconnect()
+    def on_errors(self, errors: Any) -> None:
+        log.error("X stream error: %s", errors)
+        super().on_errors(errors)
 
-else:  # pragma: no cover
-
-    TrendStream = None  # type: ignore[assignment]
+    def on_connection_error(self) -> None:
+        log.warning("X stream connection error; reconnecting")
+        self.disconnect()
 
 
 def start_filtered_stream() -> None:
@@ -284,7 +311,8 @@ def start_filtered_stream() -> None:
                         _client = client
                 except Exception as reconnect_exc:
                     log.error(
-                        "Failed to reinitialise X stream client: %s", reconnect_exc
+                        "Failed to reinitialise X stream client: %s",
+                        reconnect_exc,
                     )
 
     _stream_thread = threading.Thread(

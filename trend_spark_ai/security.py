@@ -78,20 +78,26 @@ def parse_seed_tokens(entries: Sequence[str | dict]) -> list[SeedToken]:
                 seeds.extend(parse_seed_tokens(parsed))
                 continue
         parts = value.split(":")
-        token: str
-        name: str | None = None
-        roles: list[str]
+        parsed_token: str
+        parsed_name: str | None = None
+        parsed_roles: list[str]
         if len(parts) == 3:
-            name, roles_str, token = parts
-            roles = [p.strip() for p in roles_str.split("|") if p.strip()]
+            parsed_name, roles_str, parsed_token = parts
+            parsed_roles = [p.strip() for p in roles_str.split("|") if p.strip()]
         elif len(parts) == 2:
-            role_str, token = parts
-            roles = [p.strip() for p in role_str.split("|") if p.strip()]
-            name = role_str
+            role_str, parsed_token = parts
+            parsed_roles = [p.strip() for p in role_str.split("|") if p.strip()]
+            parsed_name = role_str
         else:
-            token = parts[0]
-            roles = ["admin"]
-        seeds.append(SeedToken(token=token, roles=_ensure_roles(roles), name=name))
+            parsed_token = parts[0]
+            parsed_roles = ["admin"]
+        seeds.append(
+            SeedToken(
+                token=parsed_token,
+                roles=_ensure_roles(parsed_roles),
+                name=parsed_name,
+            )
+        )
     return seeds
 
 

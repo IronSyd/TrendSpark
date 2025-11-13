@@ -1,6 +1,6 @@
 from __future__ import annotations
 from datetime import datetime, timedelta, timezone
-from typing import Iterable, Sequence
+from typing import Any, Iterator, Sequence
 import logging
 
 from tenacity import (
@@ -13,7 +13,7 @@ from tenacity import (
 try:
     import tweepy
 except Exception:  # library not installed yet or optional
-    tweepy = None  # type: ignore
+    tweepy = None
 
 from ..config import settings
 from ..db import session_scope
@@ -72,17 +72,19 @@ def _get_trends_api() -> "tweepy.API" | None:
     return api
 
 
-def search_recent_tweets(keywords: list[str], max_results: int = 50) -> Iterable[dict]:
+def search_recent_tweets(
+    keywords: list[str], max_results: int = 50
+) -> Iterator[dict[str, Any]]:
     """Search recent tweets for given keywords using X API v2.
     Requires X_BEARER_TOKEN. Returns iterator of tweet dicts with metrics.
     """
     if max_results <= 0:
-        return []
+        return
 
     client = _get_client()
     if client is None:
         log.info("X_BEARER_TOKEN not set; skipping X ingestion")
-        return []
+        return
 
     # Build simple OR query over keywords, excluding retweets
     query = (
@@ -122,13 +124,13 @@ def search_recent_tweets(keywords: list[str], max_results: int = 50) -> Iterable
         tweets = _search_recent_with_retry(client, params)
     except tweepy.TooManyRequests as exc:
         log.warning("Hit X search rate limit; backing off: %s", exc)
-        return []
+        return
     except Exception as exc:
         log.warning("Failed to fetch recent tweets: %s", exc)
-        return []
+        return
 
     if not tweets.data:
-        return []
+        return
 
     includes = getattr(tweets, "includes", {}) or {}
     if isinstance(includes, dict):
@@ -205,7 +207,7 @@ def search_recent_tweets(keywords: list[str], max_results: int = 50) -> Iterable
         _set_since_id(str(max_id))
 
 
-def fetch_tweet_metrics(tweet_ids: Sequence[str]) -> dict[str, dict] | None:
+def fetch_tweet_metrics(tweet_ids: Sequence[str]) -> dict[str, dict[str, Any]] | None:
     """Fetch metrics for given tweet IDs. Returns mapping id -> metrics."""
     ids = [tid for tid in tweet_ids if tid]
     if not ids:
@@ -226,7 +228,7 @@ def fetch_tweet_metrics(tweet_ids: Sequence[str]) -> dict[str, dict] | None:
     if not resp.data:
         return {}
 
-    result: dict[str, dict] = {}
+    result: dict[str, dict[str, Any]] = {}
     for item in resp.data:
         metrics = item.public_metrics or {}
         result[str(item.id)] = {
@@ -262,22 +264,21 @@ def _set_since_id(value: str) -> None:
             s.add(IngestionState(key=_STATE_KEY_SINCE_ID, value=value))
 
 
-@retry(
-    stop=stop_after_attempt(3),
-    wait=wait_exponential(multiplier=1, min=1, max=30),
-    retry=retry_if_exception_type(tweepy.TooManyRequests) if tweepy else None,
-    reraise=True,
-)
-def _search_recent_with_retry(client: "tweepy.Client", params: dict):
+_retry_kwargs: dict[str, Any] = {
+    "stop": stop_after_attempt(3),
+    "wait": wait_exponential(multiplier=1, min=1, max=30),
+    "reraise": True,
+}
+if tweepy is not None:
+    _retry_kwargs["retry"] = retry_if_exception_type(tweepy.TooManyRequests)
+
+
+@retry(**_retry_kwargs)
+def _search_recent_with_retry(client: "tweepy.Client", params: dict[str, Any]):
     return client.search_recent_tweets(**params)
 
 
-@retry(
-    stop=stop_after_attempt(3),
-    wait=wait_exponential(multiplier=1, min=1, max=30),
-    retry=retry_if_exception_type(tweepy.TooManyRequests) if tweepy else None,
-    reraise=True,
-)
+@retry(**_retry_kwargs)
 def _get_tweets_with_retry(client: "tweepy.Client", ids: Sequence[str]):
     return client.get_tweets(
         ids=ids,

@@ -5,7 +5,7 @@ import re
 import time
 from collections import deque
 from datetime import datetime, timedelta
-from typing import Annotated, Literal, Any
+from typing import Annotated, Callable, Literal, Any
 
 import httpx
 from sqlalchemy import func, text
@@ -63,9 +63,12 @@ JOB_IDENTIFIER_RE = re.compile(r"^[A-Za-z0-9_.:-]{1,64}$")
 configure_logging()
 log = logging.getLogger(__name__)
 
+RateLimitCallable = Callable[..., str]
+default_rate_limits: list[str | RateLimitCallable] = list(settings.api_rate_limits)
+
 limiter = Limiter(
     key_func=get_remote_address,
-    default_limits=settings.api_rate_limits,
+    default_limits=default_rate_limits,
     headers_enabled=True,
 )
 
@@ -76,7 +79,7 @@ _api_error_events: deque[tuple[datetime, str, int]] = deque()
 _last_api_error_alert: datetime | None = None
 
 
-def _rate_limit_handler(request: Request, exc: RateLimitExceeded) -> JSONResponse:
+def _rate_limit_handler(request: Request, _exc: Exception) -> JSONResponse:
     return JSONResponse(status_code=429, content={"detail": "Rate limit exceeded"})
 
 
@@ -983,7 +986,7 @@ def watchlist_analytics(
         return WatchlistAnalytics(entries=[], days=days).model_dump()
 
     cutoff = datetime.utcnow() - timedelta(days=days)
-    entries: list[dict] = []
+    entries: list[WatchlistEntry] = []
 
     with session_scope() as s:
         for display, normalized in handles:
@@ -1003,7 +1006,7 @@ def watchlist_analytics(
                         captured_engagements=0,
                         last_seen=None,
                         recent_posts=[],
-                    ).model_dump()
+                    )
                 )
                 continue
 
@@ -1036,9 +1039,9 @@ def watchlist_analytics(
                     captured_engagements=captured_engagements,
                     last_seen=last_seen,
                     recent_posts=recent_posts,
-                ).model_dump()
+                )
             )
 
     # Sort entries by recent activity to surface active watchlist handles first.
-    entries.sort(key=lambda entry: entry["last_seen"] or "", reverse=True)
+    entries.sort(key=lambda entry: entry.last_seen or "", reverse=True)
     return WatchlistAnalytics(entries=entries, days=days).model_dump()

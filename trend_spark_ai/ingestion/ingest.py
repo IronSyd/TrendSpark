@@ -34,7 +34,9 @@ def _normalize_datetime(value) -> datetime:
 
 def upsert_post(session, data: dict) -> Post:
     existing = session.execute(
-        select(Post).where(Post.platform == data["platform"], Post.post_id == data["post_id"])  # type: ignore
+        select(Post).where(
+            Post.platform == data["platform"], Post.post_id == data["post_id"]
+        )
     ).scalar_one_or_none()
 
     if existing:
@@ -58,9 +60,9 @@ def upsert_post(session, data: dict) -> Post:
 
         author_raw = data.get("author")
         if author_raw is not None:
-            author_value = str(author_raw).lstrip("@")
-            if author_value:
-                existing.author = author_value
+            cleaned_author = str(author_raw).lstrip("@")
+            if cleaned_author:
+                existing.author = cleaned_author
         created_raw = data.get("created_at")
         if created_raw is not None:
             existing.created_at = _normalize_datetime(created_raw)
