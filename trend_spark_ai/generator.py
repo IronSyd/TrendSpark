@@ -52,13 +52,27 @@ def craft_replies_for_post(post: Post, tones: Sequence[str]) -> list[dict]:
     with session_scope() as s:
         bp = s.query(BrandProfile).order_by(BrandProfile.updated_at.desc()).first()
     system = (
-        "You are an assistant that writes short, on-brand Twitter replies that drive "
-        "engagement without being spammy. Keep replies under 240 characters, avoid "
-        "hashtags unless natural, and include variety in tone."
+        "You are the XMoney reply strategist. Every response must:\n"
+        "- Sound like XMoney's in-house reply specialist (confident, helpful, witty).\n"
+        "- Highlight how XMoney solves the pain point or advances the conversation.\n"
+        "- Avoid praising or shilling the original tweet; pivot back to XMoney's POV.\n"
+        "- Stay under 240 characters, no hashtags unless absolutely natural."
     )
     voice = _brand_profile_text(bp)
     tone_str = ", ".join(tone_sequence)
-    user = f"Post: {post.text}\n\nBrand: {voice}\nTones: {tone_str}\nReturn JSON array of objects: {{tone, reply}}."
+    user = (
+        "Original post:\n"
+        f"{post.text}\n\n"
+        "Brand voice guidance:\n"
+        f"{voice}\n\n"
+        "Reply requirements:\n"
+        '- Mention XMoney (or "we") as the actor providing value.\n'
+        "- Tie back to the brand's niche, keywords, or product benefits.\n"
+        "- Provide a subtle CTA or insight that invites a response.\n"
+        "- Never congratulate or hype the original author; keep focus on XMoney.\n"
+        f"Tones to cover (mix across replies): {tone_str}\n"
+        "Return JSON array of objects: {{tone, reply}}."
+    )
 
     schema: dict[str, Any] = {
         "type": "json_schema",
