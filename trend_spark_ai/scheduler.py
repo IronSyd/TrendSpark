@@ -117,6 +117,10 @@ def job_ingest_and_rank(
                     if created is None:
                         continue
                     if created >= recent_cutoff:
+                        if post.last_alerted_at:
+                            alerted_at = as_utc_naive(post.last_alerted_at)
+                            if alerted_at and alerted_at >= cutoff:
+                                continue
                         yield post
 
             fallback_candidate = max(
