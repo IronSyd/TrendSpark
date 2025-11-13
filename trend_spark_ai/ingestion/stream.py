@@ -137,40 +137,40 @@ class TrendStream(StreamingClientBase):
 
         if getattr(tweet, "referenced_tweets", None):
             for ref in tweet.referenced_tweets:
-                if getattr(ref, "type", None) == "retweeted":
-                    try:
-                        response = self.get_tweet(
-                            ref.id,
-                            expansions=["author_id"],
-                            tweet_fields=["created_at", "public_metrics"],
-                            user_fields=["username"],
-                        )
-                        if response and response.data:
-                            original = response.data
-                            base_tweet = original
-                            metrics = (
-                                getattr(original, "public_metrics", None) or metrics
-                            )
-                            includes = getattr(response, "includes", None)
-                            users_data: list[Any] = []
-                            if includes:
-                                if isinstance(includes, dict):
-                                    users_data = list(includes.get("users", []) or [])
-                                else:
-                                    users_data = list(
-                                        getattr(includes, "users", []) or []
-                                    )
-                            for user in users_data:
-                                try:
-                                    uid = str(getattr(user, "id"))
-                                    uname = getattr(user, "username", None)
-                                    if uid and uname:
-                                        _user_cache[uid] = uname
-                                except Exception:
-                                    continue
-                    except Exception:
-                        pass
-                    break
+                if getattr(ref, "type", None) != "retweeted":
+                    continue
+                try:
+                    response = self.get_tweet(
+                        ref.id,
+                        expansions=["author_id"],
+                        tweet_fields=["created_at", "public_metrics"],
+                        user_fields=["username"],
+                    )
+                except Exception as exc:
+                    log.debug(
+                        "Failed to fetch referenced tweet %s: %s",
+                        ref.id,
+                        exc,
+                    )
+                    continue
+                if not response or not response.data:
+                    continue
+                original = response.data
+                base_tweet = original
+                metrics = getattr(original, "public_metrics", None) or metrics
+                includes = getattr(response, "includes", None)
+                users_data: list[Any] = []
+                if includes:
+                    if isinstance(includes, dict):
+                        users_data = list(includes.get("users", []) or [])
+                    else:
+                        users_data = list(getattr(includes, "users", []) or [])
+                for user in users_data:
+                    uid = getattr(user, "id", None)
+                    uname = getattr(user, "username", None)
+                    if uid and uname:
+                        _user_cache[str(uid)] = uname
+                break
 
         if author_id is not None:
             key = str(author_id)
@@ -287,7 +287,7 @@ def start_filtered_stream() -> None:
                         "X stream exception; retrying in ~%.1fs: %s", retry_backoff, exc
                     )
 
-                jitter = random.uniform(0.8, 1.4)
+                jitter = random.uniform(0.8, 1.4)  # nosec B311
                 time.sleep(retry_backoff * jitter)
                 backoff = min(retry_backoff * 2, 600.0)
 
@@ -299,8 +299,8 @@ def start_filtered_stream() -> None:
                 # attempt full reconnect if the client ended up closed
                 try:
                     client.disconnect()
-                except Exception:
-                    pass
+                except Exception as disconnect_exc:
+                    log.debug("Failed to disconnect stream client: %s", disconnect_exc)
                 try:
                     client = TrendStream()
                     if _ensure_rules(client):
@@ -324,8 +324,8 @@ def stop_filtered_stream() -> None:
     if _client:
         try:
             _client.disconnect()
-        except Exception:
-            pass
+        except Exception as disconnect_exc:
+            log.debug("Failed to disconnect stream client: %s", disconnect_exc)
     if _stream_thread and _stream_thread.is_alive():
         _stream_thread.join(timeout=5)
     _stream_thread = None

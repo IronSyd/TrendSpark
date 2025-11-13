@@ -141,19 +141,17 @@ def search_recent_tweets(
         included_tweets = getattr(includes, "tweets", []) or []
     user_map: dict[str, str] = {}
     for user in users:
-        try:
-            user_id = str(getattr(user, "id"))
-            username = getattr(user, "username", None)
-            if user_id and username:
-                user_map[user_id] = username
-        except Exception:
+        user_id = getattr(user, "id", None)
+        username = getattr(user, "username", None)
+        if user_id is None or not username:
             continue
+        user_map[str(user_id)] = username
     tweet_map: dict[str, tweepy.Tweet] = {}
     for inc in included_tweets:
-        try:
-            tweet_map[str(getattr(inc, "id"))] = inc
-        except Exception:
+        inc_id = getattr(inc, "id", None)
+        if inc_id is None:
             continue
+        tweet_map[str(inc_id)] = inc
 
     max_id: int | None = None
     # Map tweets into unified dict format
