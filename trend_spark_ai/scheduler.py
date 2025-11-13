@@ -273,9 +273,7 @@ def job_ingest_and_rank(
         finally:
             duration_ms = round((time.perf_counter() - started) * 1000, 2)
             with session_scope() as s:
-                trending_posts = (
-                    s.query(Post).filter(Post.trending == True).all()
-                )  # noqa: E712
+                trending_posts = s.query(Post).filter(Post.trending.is_(True)).all()
             alerts_backlog = sum(
                 1 for post in trending_posts if not post.last_alerted_at
             )
@@ -310,7 +308,7 @@ def job_generate_replies_for_trending(
             with session_scope() as s:
                 posts = (
                     s.query(Post)
-                    .filter(Post.trending == True)  # noqa: E712
+                    .filter(Post.trending.is_(True))
                     .order_by(Post.virality_score.desc())
                     .limit(limit)
                     .all()

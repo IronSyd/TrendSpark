@@ -7,8 +7,8 @@ import pytest
 
 os.environ.setdefault("DATABASE_URL", "sqlite:///./tests_unit.db")
 
-from trend_spark_ai import generator
-from trend_spark_ai.db import Base, engine
+from trend_spark_ai import generator  # noqa: E402
+from trend_spark_ai.db import Base, engine  # noqa: E402
 
 
 @pytest.fixture(autouse=True)

@@ -6,8 +6,11 @@ from sqlalchemy.orm import sessionmaker
 
 os.environ.setdefault("DATABASE_URL", "sqlite:///./tests_unit.db")
 
-from trend_spark_ai.ingestion.ingest import upsert_post, _normalize_datetime
-from trend_spark_ai.models import Base, Post
+from trend_spark_ai.ingestion.ingest import (  # noqa: E402
+    upsert_post,
+    _normalize_datetime,
+)
+from trend_spark_ai.models import Base  # noqa: E402
 
 
 def create_session():

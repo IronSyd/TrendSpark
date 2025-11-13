@@ -5,7 +5,7 @@ from types import SimpleNamespace
 
 os.environ.setdefault("DATABASE_URL", "sqlite:///./tests_unit.db")
 
-from trend_spark_ai.ranking import compute_scores_for_post
+from trend_spark_ai.ranking import compute_scores_for_post  # noqa: E402
 
 
 def make_post(**overrides):

@@ -286,7 +286,11 @@ def _get_tweets_with_retry(client: "tweepy.Client", ids: Sequence[str]):
 
 
 def fetch_trending_hashtags(limit: int = 20) -> list[str]:
-    """Fetch trending hashtags for weighting. Requires OAuth1 credentials; returns lowercase hashtag names without '#'."""
+    """Fetch trending hashtags for weighting.
+
+    Requires OAuth1 credentials and returns lowercase hashtag names without
+    the leading '#'.
+    """
     limit = max(1, min(limit, 50))
     cache_entry = _trending_cache.get(_TREND_CACHE_KEY)
     now = datetime.utcnow()

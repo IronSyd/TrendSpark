@@ -51,7 +51,11 @@ def craft_replies_for_post(post: Post, tones: Sequence[str]) -> list[dict]:
 
     with session_scope() as s:
         bp = s.query(BrandProfile).order_by(BrandProfile.updated_at.desc()).first()
-    system = "You are an assistant that writes short, on-brand Twitter replies that drive engagement without being spammy. Keep it under 240 characters, avoid hashtags unless natural, and include variety in tone."
+    system = (
+        "You are an assistant that writes short, on-brand Twitter replies that drive "
+        "engagement without being spammy. Keep replies under 240 characters, avoid "
+        "hashtags unless natural, and include variety in tone."
+    )
     voice = _brand_profile_text(bp)
     tone_str = ", ".join(tone_sequence)
     user = f"Post: {post.text}\n\nBrand: {voice}\nTones: {tone_str}\nReturn JSON array of objects: {{tone, reply}}."
