@@ -185,9 +185,7 @@ class TrendStream(StreamingClientBase):
                 except Exception:
                     username = None
 
-        url_username = username or (
-            str(author_id) if author_id is not None else None
-        )
+        url_username = username or (str(author_id) if author_id is not None else None)
         if url_username:
             post_url = f"https://x.com/{url_username}/status/{base_tweet.id}"
         else:
@@ -196,8 +194,7 @@ class TrendStream(StreamingClientBase):
             "platform": "x",
             "post_id": str(base_tweet.id),
             "text": getattr(base_tweet, "text", None) or tweet.text,
-            "author": username
-            or (str(author_id) if author_id is not None else None),
+            "author": username or (str(author_id) if author_id is not None else None),
             "created_at": getattr(base_tweet, "created_at", None),
             "like_count": int(metrics.get("like_count", 0)),
             "reply_count": int(metrics.get("reply_count", 0)),
@@ -229,9 +226,7 @@ class TrendStream(StreamingClientBase):
                 }
 
         if trending_payload:
-            snippet = (
-                trending_payload["url"] or (trending_payload["text"] or "")[:200]
-            )
+            snippet = trending_payload["url"] or (trending_payload["text"] or "")[:200]
             message = f"🔥 Stream alert {trending_payload['score']:.2f}: {snippet}"
             send_telegram_message(message)
 
