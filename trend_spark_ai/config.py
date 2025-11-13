@@ -1,3 +1,5 @@
+import os
+import warnings
 from functools import lru_cache
 from typing import List, Sequence
 
@@ -187,9 +189,15 @@ class Settings(BaseSettings):
     @field_validator("api_tokens")
     @classmethod
     def _require_tokens(cls, value: List[str]) -> List[str]:
-        if not value:
-            raise ValueError("API_TOKENS must include at least one token")
-        return value
+        if value:
+            return value
+        fallback = os.environ.get("DEFAULT_API_TOKEN", "local-test-token")
+        warnings.warn(
+            "API_TOKENS not set; falling back to DEFAULT_API_TOKEN/local-test-token. "
+            "Set API_TOKENS in your environment for production deployments.",
+            stacklevel=1,
+        )
+        return [fallback]
 
 
 @lru_cache
