@@ -39,6 +39,32 @@ def _brand_profile_text(bp: BrandProfile | None) -> str:
     return "; ".join(parts)
 
 
+def _brand_markers(state: GrowthState | None, alias: str) -> list[str]:
+    markers = {alias.lower(), alias.replace(" ", "").lower(), "xmoney"}
+    if state:
+        markers.update(value.lower() for value in state.keywords)
+        markers.update(handle.lower().lstrip("@") for handle in state.watchlist)
+    return [marker for marker in markers if marker]
+
+
+def _ensure_brand_reference(
+    replies: list[dict], state: GrowthState | None, alias: str
+) -> None:
+    markers = _brand_markers(state, alias)
+    keyword_hint = (state.keywords[0] if state and state.keywords else None) or (
+        state.niche if state and state.niche else "web3"
+    )
+    suffix = f" {alias} keeps {keyword_hint} builders ahead."
+    for reply in replies:
+        text = str(reply.get("reply", "")).strip()
+        if not text:
+            continue
+        normalized = text.lower()
+        if any(marker in normalized for marker in markers):
+            continue
+        reply["reply"] = f"{text} {suffix}".strip()
+
+
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=10))
 def craft_replies_for_post(post: Post, tones: Sequence[str]) -> list[dict]:
     client = _openai_client()
@@ -49,13 +75,22 @@ def craft_replies_for_post(post: Post, tones: Sequence[str]) -> list[dict]:
     if not tone_sequence:
         tone_sequence = list(tones)
 
+    try:
+        growth_state = get_growth_state()
+    except Exception:
+        growth_state = None
+
+    brand_alias = (growth_state.name if growth_state else None) or "XMoney"
+    profile_keywords = ", ".join(growth_state.keywords[:8]) if growth_state else ""
+    profile_watch = ", ".join(growth_state.watchlist[:5]) if growth_state else ""
+
     with session_scope() as s:
         bp = s.query(BrandProfile).order_by(BrandProfile.updated_at.desc()).first()
     system = (
-        "You are the XMoney reply strategist. Every response must:\n"
-        "- Sound like XMoney's in-house reply specialist (confident, helpful, witty).\n"
-        "- Highlight how XMoney solves the pain point or advances the conversation.\n"
-        "- Avoid praising or shilling the original tweet; pivot back to XMoney's POV.\n"
+        f"You are the {brand_alias} reply strategist. Every response must:\n"
+        f"- Sound like {brand_alias}'s in-house reply specialist (confident, helpful, witty).\n"
+        f"- Highlight how {brand_alias} solves the pain point or advances the conversation.\n"
+        "- Avoid praising or shilling the original tweet; pivot back to the brand POV.\n"
         "- Stay under 240 characters, no hashtags unless absolutely natural."
     )
     voice = _brand_profile_text(bp)
@@ -66,10 +101,12 @@ def craft_replies_for_post(post: Post, tones: Sequence[str]) -> list[dict]:
         "Brand voice guidance:\n"
         f"{voice}\n\n"
         "Reply requirements:\n"
-        '- Mention XMoney (or "we") as the actor providing value.\n'
-        "- Tie back to the brand's niche, keywords, or product benefits.\n"
+        f'- Mention {brand_alias} (or "we") as the actor providing value.\n'
+        "- Tie back to the growth profile niche, keywords, or product benefits.\n"
         "- Provide a subtle CTA or insight that invites a response.\n"
-        "- Never congratulate or hype the original author; keep focus on XMoney.\n"
+        "- Never congratulate or hype the original author; keep focus on the brand.\n"
+        f"- Growth profile keywords/priorities: {profile_keywords or 'n/a'}\n"
+        f"- Priority watchlist handles or communities: {profile_watch or 'n/a'}\n"
         f"Tones to cover (mix across replies): {tone_str}\n"
         "Return JSON array of objects: {{tone, reply}}."
     )
@@ -121,6 +158,8 @@ def craft_replies_for_post(post: Post, tones: Sequence[str]) -> list[dict]:
             r = str(item.get("reply", ""))
             if r:
                 results.append({"tone": t, "reply": r})
+        if results:
+            _ensure_brand_reference(results, growth_state, brand_alias)
         return results
     except Exception:
         snippet = content[:200].replace("\n", " ")
