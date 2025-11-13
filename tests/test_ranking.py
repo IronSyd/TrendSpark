@@ -47,7 +47,9 @@ def test_velocity_penalises_stale_content():
         view_count=5500,
     )
     recent_post = make_post(created_at=datetime.now(timezone.utc), **metrics)
-    stale_post = make_post(created_at=datetime.now(timezone.utc) - timedelta(hours=48), **metrics)
+    stale_post = make_post(
+        created_at=datetime.now(timezone.utc) - timedelta(hours=48), **metrics
+    )
 
     recent_virality, recent_velocity = compute_scores_for_post(recent_post)
     stale_virality, stale_velocity = compute_scores_for_post(stale_post)

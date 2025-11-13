@@ -76,7 +76,9 @@ def test_craft_replies_handles_invalid_json(monkeypatch):
             self.chat = SimpleNamespace(
                 completions=SimpleNamespace(
                     create=lambda **_: SimpleNamespace(
-                        choices=[SimpleNamespace(message=SimpleNamespace(content="not json"))],
+                        choices=[
+                            SimpleNamespace(message=SimpleNamespace(content="not json"))
+                        ],
                         usage=SimpleNamespace(total_tokens=None),
                     )
                 )

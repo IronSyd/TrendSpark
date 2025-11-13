@@ -14,7 +14,11 @@ from pydantic import BaseModel, Field, field_validator
 from .config import settings
 from .db import Base, engine
 from .auth import ApiTokenMiddleware, SEED_TOKENS, require_roles, AuthenticatedUser
-from .ingestion.stream import refresh_stream_rules, start_filtered_stream, stop_filtered_stream
+from .ingestion.stream import (
+    refresh_stream_rules,
+    start_filtered_stream,
+    stop_filtered_stream,
+)
 from .scheduler import (
     JOB_HANDLERS,
     build_scheduler,
@@ -72,7 +76,9 @@ class SchedulerConfigBase(BaseModel):
     @classmethod
     def validate_job_id(cls, value: str) -> str:
         if value not in JOB_HANDLERS:
-            raise ValueError(f"Unknown job_id '{value}'. Valid options: {', '.join(sorted(JOB_HANDLERS))}")
+            raise ValueError(
+                f"Unknown job_id '{value}'. Valid options: {', '.join(sorted(JOB_HANDLERS))}"
+            )
         return value
 
     @field_validator("cron")
@@ -106,7 +112,9 @@ class SchedulerConfigUpdate(BaseModel):
         if value is None:
             return value
         if value not in JOB_HANDLERS:
-            raise ValueError(f"Unknown job_id '{value}'. Valid options: {', '.join(sorted(JOB_HANDLERS))}")
+            raise ValueError(
+                f"Unknown job_id '{value}'. Valid options: {', '.join(sorted(JOB_HANDLERS))}"
+            )
         return value
 
     @field_validator("cron")
@@ -132,7 +140,9 @@ def _serialize_config_payload(cfg_dict: dict) -> dict:
     if scheduler:
         job = scheduler.get_job(scheduler_job_identifier(cfg_dict["config_id"]))
     payload = dict(cfg_dict)
-    payload["next_run"] = job.next_run_time.isoformat() if job and job.next_run_time else None
+    payload["next_run"] = (
+        job.next_run_time.isoformat() if job and job.next_run_time else None
+    )
     payload["paused"] = not cfg_dict["enabled"]
     return payload
 
@@ -183,7 +193,9 @@ def scheduler_jobs(
     _: AuthenticatedUser = Depends(require_roles("admin")),
 ) -> list[dict]:
     configs = list_scheduler_configs()
-    return [_serialize_config_payload(serialize_scheduler_config(cfg)) for cfg in configs]
+    return [
+        _serialize_config_payload(serialize_scheduler_config(cfg)) for cfg in configs
+    ]
 
 
 def _run_job_async(config_id: int) -> None:

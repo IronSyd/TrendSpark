@@ -74,7 +74,9 @@ def _required_engagement(
     ratio = 1.0
     if author and author in author_avgs and global_reference > 0:
         ratio = author_avgs[author] / global_reference
-    ratio = max(settings.trend_author_scale_min, min(settings.trend_author_scale_max, ratio))
+    ratio = max(
+        settings.trend_author_scale_min, min(settings.trend_author_scale_max, ratio)
+    )
     required = round(base_required * ratio)
     return max(1, required)
 
@@ -137,7 +139,9 @@ def rank_and_mark(
     with session_scope() as s:
         posts = s.execute(select(Post)).scalars().all()
         author_avgs, global_avg = _build_author_engagement_stats(posts)
-        global_reference = max(global_avg, float(settings.trending_min_engagement_mix), 1.0)
+        global_reference = max(
+            global_avg, float(settings.trending_min_engagement_mix), 1.0
+        )
         for p in posts:
             v, vel = compute_scores_for_post(p)
             created = as_utc_naive(p.created_at)
@@ -146,7 +150,9 @@ def rank_and_mark(
             if _matches_trending_hashtag(p, hashtags_norm):
                 v = min(1.0, v + settings.trending_hashtag_bonus)
             if settings.recency_bonus_minutes > 0 and settings.recency_bonus_amount > 0:
-                if created and (now - created) <= timedelta(minutes=settings.recency_bonus_minutes):
+                if created and (now - created) <= timedelta(
+                    minutes=settings.recency_bonus_minutes
+                ):
                     v = min(1.0, v + settings.recency_bonus_amount)
             was_trending = p.trending
             ts = as_utc_naive(p.trending_since)
@@ -156,8 +162,12 @@ def rank_and_mark(
                 p.trending_since = None
                 ts = None
 
-            engagement_total = (p.like_count or 0) + (p.repost_count or 0) + (p.reply_count or 0)
-            required_engagement = _required_engagement(p.author, author_avgs, global_reference)
+            engagement_total = (
+                (p.like_count or 0) + (p.repost_count or 0) + (p.reply_count or 0)
+            )
+            required_engagement = _required_engagement(
+                p.author, author_avgs, global_reference
+            )
             engagement_ok = engagement_total >= required_engagement
             qualifies = engagement_ok
 
@@ -183,7 +193,12 @@ def rank_and_mark(
                 should_trend = True
 
             trend_origin = ts or candidate_ts
-            if should_trend and cutoff is not None and trend_origin and trend_origin < cutoff:
+            if (
+                should_trend
+                and cutoff is not None
+                and trend_origin
+                and trend_origin < cutoff
+            ):
                 should_trend = False
 
             p.virality_score = v
@@ -204,10 +219,14 @@ def rank_and_mark(
     return updated
 
 
-def top_conversations(limit: int = 20, min_created_at: datetime | None = None) -> list[Post]:
+def top_conversations(
+    limit: int = 20, min_created_at: datetime | None = None
+) -> list[Post]:
     with session_scope() as s:
         stmt = select(Post)
         if min_created_at is not None:
             stmt = stmt.where(Post.created_at >= min_created_at)
-        stmt = stmt.order_by(Post.trending.desc(), Post.virality_score.desc()).limit(limit)
+        stmt = stmt.order_by(Post.trending.desc(), Post.virality_score.desc()).limit(
+            limit
+        )
         return s.execute(stmt).scalars().all()

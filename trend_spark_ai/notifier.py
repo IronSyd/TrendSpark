@@ -12,7 +12,9 @@ from .models import Notification
 log = logging.getLogger(__name__)
 
 
-def send_telegram_message(text: str, category: str | None = None, payload: dict | None = None) -> bool:
+def send_telegram_message(
+    text: str, category: str | None = None, payload: dict | None = None
+) -> bool:
     if not (settings.telegram_bot_token and settings.telegram_chat_id):
         log.info("Telegram settings missing; skip notify")
         record_alert_delivery("telegram", category, "skipped")

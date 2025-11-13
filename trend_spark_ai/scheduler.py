@@ -111,7 +111,12 @@ def job_ingest_and_rank(
             recent_cutoff = datetime.utcnow() - timedelta(hours=24)
             posts = top_conversations(limit=top_limit, min_created_at=recent_cutoff)
             fallback_candidate = max(
-                (p for p in posts if as_utc_naive(p.created_at) and as_utc_naive(p.created_at) >= recent_cutoff),
+                (
+                    p
+                    for p in posts
+                    if as_utc_naive(p.created_at)
+                    and as_utc_naive(p.created_at) >= recent_cutoff
+                ),
                 key=_total_engagement,
                 default=None,
             )
@@ -131,7 +136,10 @@ def job_ingest_and_rank(
                         continue
 
                     last_alert_score = post.last_alerted_virality
-                    if last_alert_score is not None and abs(last_alert_score - post.virality_score) < 1e-3:
+                    if (
+                        last_alert_score is not None
+                        and abs(last_alert_score - post.virality_score) < 1e-3
+                    ):
                         log.info(
                             "alert.skip_unchanged",
                             extra={
@@ -144,12 +152,17 @@ def job_ingest_and_rank(
 
                     suggestions = list(post.reply_suggestions or [])
                     if not suggestions:
-                        generated = craft_replies_for_post(post, settings.tone_priorities)
+                        generated = craft_replies_for_post(
+                            post, settings.tone_priorities
+                        )
                         suggestions = generated or []
                         if suggestions:
                             db_post = (
                                 s.query(Post)
-                                .filter(Post.platform == post.platform, Post.post_id == post.post_id)
+                                .filter(
+                                    Post.platform == post.platform,
+                                    Post.post_id == post.post_id,
+                                )
                                 .first()
                             )
                             if db_post:
@@ -190,7 +203,9 @@ def job_ingest_and_rank(
 
                     db_post = (
                         s.query(Post)
-                        .filter(Post.platform == post.platform, Post.post_id == post.post_id)
+                        .filter(
+                            Post.platform == post.platform, Post.post_id == post.post_id
+                        )
                         .first()
                     )
                     if db_post:
@@ -210,7 +225,9 @@ def job_ingest_and_rank(
             elif fallback_candidate is not None:
                 eng_total = _total_engagement(fallback_candidate)
                 handle = (fallback_candidate.author or "").lstrip("@")
-                display_name = f"@{handle}" if handle else fallback_candidate.author or "Unknown"
+                display_name = (
+                    f"@{handle}" if handle else fallback_candidate.author or "Unknown"
+                )
                 fallback_lines = [
                     f"Engagement suggestion ({now.strftime('%H:%M')}) – monitoring for traction.",
                     f"- {display_name}",
@@ -244,7 +261,9 @@ def job_ingest_and_rank(
                     )
                     if db_post:
                         db_post.last_alerted_at = now
-                        db_post.last_alerted_virality = fallback_candidate.virality_score
+                        db_post.last_alerted_virality = (
+                            fallback_candidate.virality_score
+                        )
                 alerts_sent = 1
                 summary_lines[:] = fallback_lines
                 outcome = "fallback_alert"
@@ -254,9 +273,15 @@ def job_ingest_and_rank(
         finally:
             duration_ms = round((time.perf_counter() - started) * 1000, 2)
             with session_scope() as s:
-                trending_posts = s.query(Post).filter(Post.trending == True).all()  # noqa: E712
-            alerts_backlog = sum(1 for post in trending_posts if not post.last_alerted_at)
-            replies_backlog = sum(1 for post in trending_posts if not (post.reply_suggestions or []))
+                trending_posts = (
+                    s.query(Post).filter(Post.trending == True).all()
+                )  # noqa: E712
+            alerts_backlog = sum(
+                1 for post in trending_posts if not post.last_alerted_at
+            )
+            replies_backlog = sum(
+                1 for post in trending_posts if not (post.reply_suggestions or [])
+            )
             set_queue_backlog("alerts_pending", alerts_backlog)
             set_queue_backlog("replies_pending", replies_backlog)
             observe_job_duration("ingest_rank", duration_ms / 1000.0, outcome)
@@ -274,7 +299,9 @@ def job_ingest_and_rank(
             )
 
 
-def job_generate_replies_for_trending(*, limit: int = 10, growth_profile_id: int | None = None) -> None:
+def job_generate_replies_for_trending(
+    *, limit: int = 10, growth_profile_id: int | None = None
+) -> None:
     with correlation_context() as cid:
         started = time.perf_counter()
         generated = 0
@@ -310,7 +337,9 @@ def job_generate_replies_for_trending(*, limit: int = 10, growth_profile_id: int
             )
 
 
-def job_daily_ideas(*, announce: bool = True, growth_profile_id: int | None = None) -> None:
+def job_daily_ideas(
+    *, announce: bool = True, growth_profile_id: int | None = None
+) -> None:
     with correlation_context() as cid:
         started = time.perf_counter()
         result = "no_ideas"
@@ -472,7 +501,10 @@ def _execute_configured_job(config_id: int) -> None:
         return
     handler = JOB_HANDLERS.get(config.job_id)
     if not handler:
-        log.error("scheduler.unknown_job", extra={"job_id": config.job_id, "config_id": config.id})
+        log.error(
+            "scheduler.unknown_job",
+            extra={"job_id": config.job_id, "config_id": config.id},
+        )
         return
 
     lock_token = _acquire_scheduler_lock(config)
@@ -502,7 +534,13 @@ def _execute_configured_job(config_id: int) -> None:
             raise
         finally:
             duration_ms = round((time.perf_counter() - started) * 1000, 2)
-            _record_job_run(config, status=status, detail=detail, duration_ms=duration_ms, correlation_id=cid)
+            _record_job_run(
+                config,
+                status=status,
+                detail=detail,
+                duration_ms=duration_ms,
+                correlation_id=cid,
+            )
             _track_job_result(config.job_id, status, detail)
             _release_scheduler_lock(config.id, lock_token)
 
@@ -593,7 +631,9 @@ def create_scheduler_config(
     growth_profile_id: int | None = None,
 ) -> SchedulerConfig:
     if job_id not in JOB_HANDLERS:
-        raise ValueError(f"Unknown job_id '{job_id}'. Valid jobs: {', '.join(sorted(JOB_HANDLERS))}")
+        raise ValueError(
+            f"Unknown job_id '{job_id}'. Valid jobs: {', '.join(sorted(JOB_HANDLERS))}"
+        )
     profile = get_growth_state(growth_profile_id, allow_inactive=True)
     with session_scope() as s:
         cfg = SchedulerConfig(

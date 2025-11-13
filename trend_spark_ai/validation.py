@@ -4,7 +4,9 @@ import re
 from typing import Iterable, Sequence
 
 
-def sanitize_text(value: str | None, *, max_length: int, strip: bool = True) -> str | None:
+def sanitize_text(
+    value: str | None, *, max_length: int, strip: bool = True
+) -> str | None:
     """Trim and validate optional text payloads."""
     if value is None:
         return None
@@ -51,7 +53,9 @@ def sanitize_string_list(
     return cleaned
 
 
-def sanitize_identifier(value: str, *, pattern: re.Pattern[str], max_length: int, strip: bool = True) -> str:
+def sanitize_identifier(
+    value: str, *, pattern: re.Pattern[str], max_length: int, strip: bool = True
+) -> str:
     """Ensure identifiers use safe characters and length."""
     if strip:
         value = value.strip()

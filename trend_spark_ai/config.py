@@ -1,7 +1,14 @@
 from functools import lru_cache
 from typing import List, Sequence
 
-from pydantic import AliasChoices, AnyHttpUrl, Field, PostgresDsn, field_validator, model_validator
+from pydantic import (
+    AliasChoices,
+    AnyHttpUrl,
+    Field,
+    PostgresDsn,
+    field_validator,
+    model_validator,
+)
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -21,14 +28,21 @@ class Settings(BaseSettings):
     telegram_bot_token: str | None = Field(default=None, env="TELEGRAM_BOT_TOKEN")
     telegram_chat_id: str | None = Field(default=None, env="TELEGRAM_CHAT_ID")
 
-    database_url: PostgresDsn | str = Field(default="sqlite:///trend_spark.db", env="DATABASE_URL")
+    database_url: PostgresDsn | str = Field(
+        default="sqlite:///trend_spark.db", env="DATABASE_URL"
+    )
 
     keywords: List[str] = Field(default_factory=list, env="KEYWORDS")
-    tone_priorities: List[str] = Field(default_factory=lambda: ["witty", "helpful", "contrarian", "informative"], env="TONE_PRIORITIES")
+    tone_priorities: List[str] = Field(
+        default_factory=lambda: ["witty", "helpful", "contrarian", "informative"],
+        env="TONE_PRIORITIES",
+    )
     watchlist: List[str] = Field(default_factory=list, env="WATCHLIST")
     x_stream_rules: List[str] = Field(default_factory=list, env="X_STREAM_RULES")
     api_tokens: List[str] = Field(default_factory=list, env="API_TOKENS")
-    api_rate_limits: List[str] = Field(default_factory=lambda: ["200/minute", "1000/day"], env="API_RATE_LIMITS")
+    api_rate_limits: List[str] = Field(
+        default_factory=lambda: ["200/minute", "1000/day"], env="API_RATE_LIMITS"
+    )
 
     niche_default: str | None = Field(default=None, env="NICHE")
     cors_allow_origins: List[AnyHttpUrl] = Field(
@@ -44,7 +58,9 @@ class Settings(BaseSettings):
     reddit_ingest_enabled: bool = Field(default=True, env="REDDIT_INGEST_ENABLED")
     ideas_time_hour: int = Field(default=8, env="IDEAS_TIME_HOUR")
     alert_recency_minutes: int = Field(default=30, env="ALERT_RECENCY_MINUTES")
-    scheduler_url: AnyHttpUrl = Field(default="http://localhost:9000", env="SCHEDULER_URL")
+    scheduler_url: AnyHttpUrl = Field(
+        default="http://localhost:9000", env="SCHEDULER_URL"
+    )
     trending_min_likes: int = Field(
         default=5,
         validation_alias=AliasChoices("TREND_MIN_LIKES", "TRENDING_MIN_LIKES"),
@@ -77,7 +93,14 @@ class Settings(BaseSettings):
         case_sensitive=False,
     )
 
-    @field_validator("keywords", "tone_priorities", "watchlist", "api_tokens", "api_rate_limits", mode="before")
+    @field_validator(
+        "keywords",
+        "tone_priorities",
+        "watchlist",
+        "api_tokens",
+        "api_rate_limits",
+        mode="before",
+    )
     @classmethod
     def _split_csv(cls, value: Sequence[str] | str | None) -> List[str]:
         if not value:

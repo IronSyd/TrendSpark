@@ -49,7 +49,14 @@ def parse_seed_tokens(entries: Sequence[str | dict]) -> list[SeedToken]:
                 roles = [r.strip() for r in raw_roles.split("|") if r.strip()]
             else:
                 roles = [str(r).strip() for r in raw_roles if str(r).strip()]
-            seeds.append(SeedToken(token=token, roles=_ensure_roles(roles), name=name, label=raw.get("label")))
+            seeds.append(
+                SeedToken(
+                    token=token,
+                    roles=_ensure_roles(roles),
+                    name=name,
+                    label=raw.get("label"),
+                )
+            )
             continue
 
         value = str(raw).strip()
@@ -158,7 +165,9 @@ def _ensure_user(session: Session, seed: SeedToken) -> None:
     target_roles = {role_name.lower() for role_name in seed.roles if role_name}
     existing_roles = set(
         session.execute(
-            select(Role.name).join(UserRole, Role.id == UserRole.role_id).where(UserRole.user_id == user.id)
+            select(Role.name)
+            .join(UserRole, Role.id == UserRole.role_id)
+            .where(UserRole.user_id == user.id)
         ).scalars()
     )
 
@@ -210,7 +219,11 @@ def _add_user_role(session: Session, user_id: int, role_id: int) -> None:
         )
     else:
         existing = session.execute(
-            select(UserRole).where(UserRole.user_id == user_id, UserRole.role_id == role_id)
+            select(UserRole).where(
+                UserRole.user_id == user_id, UserRole.role_id == role_id
+            )
         ).scalar_one_or_none()
         if not existing:
-            session.add(UserRole(user_id=user_id, role_id=role_id, assigned_at=assigned_at))
+            session.add(
+                UserRole(user_id=user_id, role_id=role_id, assigned_at=assigned_at)
+            )

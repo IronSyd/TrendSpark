@@ -106,7 +106,10 @@ def craft_replies_for_post(post: Post, tones: Sequence[str]) -> list[dict]:
         return results
     except Exception:
         snippet = content[:200].replace("\n", " ")
-        log.exception("Failed to parse reply suggestions from OpenAI response (content preview: %s)", snippet)
+        log.exception(
+            "Failed to parse reply suggestions from OpenAI response (content preview: %s)",
+            snippet,
+        )
         return []
 
 
@@ -122,9 +125,21 @@ def generate_daily_ideas(growth_state: GrowthState | None) -> list[str]:
             "Each is self-contained, practical, and hooks readers in the first line."
         )
         voice = _brand_profile_text(bp)
-        niche_focus = (growth_state.niche or "").strip() if growth_state and growth_state.niche else "fintech innovation"
-        keywords = ", ".join(growth_state.keywords[:8]) if growth_state and growth_state.keywords else "crypto payments, onchain finance, AI fintech copilots"
-        watchlist = ", ".join(growth_state.watchlist[:5]) if growth_state and growth_state.watchlist else "xMoney community, Web3 operators"
+        niche_focus = (
+            (growth_state.niche or "").strip()
+            if growth_state and growth_state.niche
+            else "fintech innovation"
+        )
+        keywords = (
+            ", ".join(growth_state.keywords[:8])
+            if growth_state and growth_state.keywords
+            else "crypto payments, onchain finance, AI fintech copilots"
+        )
+        watchlist = (
+            ", ".join(growth_state.watchlist[:5])
+            if growth_state and growth_state.watchlist
+            else "xMoney community, Web3 operators"
+        )
         user = (
             "Generate exactly 5 net-new tweet ideas as a JSON array of strings."
             "\nEach idea must:"
@@ -194,7 +209,9 @@ def ensure_today_ideas(growth_profile_id: int | None = None) -> list[str]:
     try:
         growth_state = get_growth_state(growth_profile_id)
     except ValueError:
-        log.warning("Growth profile %s not found; falling back to default", growth_profile_id)
+        log.warning(
+            "Growth profile %s not found; falling back to default", growth_profile_id
+        )
         growth_state = get_growth_state()
     with session_scope() as s:
         existing = s.query(Idea).filter(Idea.created_day == day).first()

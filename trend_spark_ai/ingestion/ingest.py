@@ -11,6 +11,7 @@ from ..metrics import record_ingest_counts
 from ..models import Post, IngestAudit
 from .x_client import search_recent_tweets
 from .reddit_client import fetch_reddit_trending
+
 log = logging.getLogger(__name__)
 
 
@@ -38,7 +39,13 @@ def upsert_post(session, data: dict) -> Post:
 
     if existing:
         # Update metrics and fields if changed
-        metric_fields = ["like_count", "reply_count", "repost_count", "quote_count", "view_count"]
+        metric_fields = [
+            "like_count",
+            "reply_count",
+            "repost_count",
+            "quote_count",
+            "view_count",
+        ]
         for f in ["text", "url"]:
             value = data.get(f)
             if value is not None:
@@ -114,11 +121,17 @@ def ingest_cycle(
                     platform=item.get("platform", "x"),
                     post_id=item.get("post_id"),
                     author=post.author,
-                    item_created_at=_normalize_datetime(item.get("created_at")) if item.get("created_at") else post.created_at,
+                    item_created_at=(
+                        _normalize_datetime(item.get("created_at"))
+                        if item.get("created_at")
+                        else post.created_at
+                    ),
                     summary=summary,
                 )
             )
-        for item in fetch_reddit_trending(keywords_for_sources, limit_per_sub=max_reddit_per_sub):
+        for item in fetch_reddit_trending(
+            keywords_for_sources, limit_per_sub=max_reddit_per_sub
+        ):
             post = upsert_post(s, item)
             total += 1
             counts["reddit"] += 1
@@ -130,11 +143,14 @@ def ingest_cycle(
                     platform=item.get("platform", "reddit"),
                     post_id=item.get("post_id"),
                     author=post.author,
-                    item_created_at=_normalize_datetime(item.get("created_at")) if item.get("created_at") else post.created_at,
+                    item_created_at=(
+                        _normalize_datetime(item.get("created_at"))
+                        if item.get("created_at")
+                        else post.created_at
+                    ),
                     summary=summary,
                 )
             )
     log.info("Ingested/upserted %d items", total)
     record_ingest_counts(counts)
     return total
-

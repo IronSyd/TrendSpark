@@ -106,7 +106,9 @@ def cmd_refresh(_: argparse.Namespace) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="trendspark", description="Trend Spark AI management CLI")
+    parser = argparse.ArgumentParser(
+        prog="trendspark", description="Trend Spark AI management CLI"
+    )
     sub = parser.add_subparsers(dest="command")
 
     list_cmd = sub.add_parser("scheduler-list", help="List scheduler configs")
@@ -121,8 +123,10 @@ def build_parser() -> argparse.ArgumentParser:
     add_cmd.add_argument("--priority", type=int, default=5)
     add_cmd.add_argument("--concurrency", type=int, default=1)
     add_cmd.add_argument("--lock-timeout", type=int, default=300)
-    add_cmd.add_argument("--parameters", help='JSON object with job parameters')
-    add_cmd.add_argument("--growth-profile-id", type=int, help="Target growth profile ID")
+    add_cmd.add_argument("--parameters", help="JSON object with job parameters")
+    add_cmd.add_argument(
+        "--growth-profile-id", type=int, help="Target growth profile ID"
+    )
     add_cmd.set_defaults(func=cmd_add)
 
     upd_cmd = sub.add_parser("scheduler-update", help="Update existing config")
@@ -135,8 +139,10 @@ def build_parser() -> argparse.ArgumentParser:
     upd_cmd.add_argument("--lock-timeout", type=int)
     upd_cmd.add_argument("--enable", action="store_true")
     upd_cmd.add_argument("--disable", action="store_true")
-    upd_cmd.add_argument("--parameters", help='JSON object with job parameters')
-    upd_cmd.add_argument("--growth-profile-id", type=int, help="Target growth profile ID")
+    upd_cmd.add_argument("--parameters", help="JSON object with job parameters")
+    upd_cmd.add_argument(
+        "--growth-profile-id", type=int, help="Target growth profile ID"
+    )
     upd_cmd.set_defaults(func=cmd_update)
 
     del_cmd = sub.add_parser("scheduler-delete", help="Delete config")

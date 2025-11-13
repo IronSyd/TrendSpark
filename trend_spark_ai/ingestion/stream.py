@@ -51,7 +51,9 @@ def _desired_rules() -> list[str]:
 def _ensure_rules(client: "TrendStream") -> bool:
     rules = _desired_rules()
     if not rules:
-        log.warning("X stream enabled but no rules available (set KEYWORDS or X_STREAM_RULES)")
+        log.warning(
+            "X stream enabled but no rules available (set KEYWORDS or X_STREAM_RULES)"
+        )
         return False
     try:
         existing = client.get_rules()
@@ -78,7 +80,9 @@ def _ensure_rules(client: "TrendStream") -> bool:
     to_add = [r for r in rules if r not in existing_map]
     if to_add:
         try:
-            client.add_rules([tweepy.StreamRule(value=r, tag="trend-spark") for r in to_add])
+            client.add_rules(
+                [tweepy.StreamRule(value=r, tag="trend-spark") for r in to_add]
+            )
             log.info("Added %d X stream rules", len(to_add))
         except Exception as exc:
             log.error("Failed to add X stream rules: %s", exc)
@@ -115,7 +119,9 @@ if tweepy is not None:  # pragma: no branch
                             if response and response.data:
                                 original = response.data
                                 base_tweet = original
-                                metrics = getattr(original, "public_metrics", None) or metrics
+                                metrics = (
+                                    getattr(original, "public_metrics", None) or metrics
+                                )
                                 includes = getattr(response, "includes", None)
                                 users = []
                                 if includes:
@@ -148,7 +154,9 @@ if tweepy is not None:  # pragma: no branch
                     except Exception:
                         username = None
 
-            url_username = username or (str(author_id) if author_id is not None else None)
+            url_username = username or (
+                str(author_id) if author_id is not None else None
+            )
             if url_username:
                 post_url = f"https://x.com/{url_username}/status/{base_tweet.id}"
             else:
@@ -157,7 +165,8 @@ if tweepy is not None:  # pragma: no branch
                 "platform": "x",
                 "post_id": str(base_tweet.id),
                 "text": getattr(base_tweet, "text", None) or tweet.text,
-                "author": username or (str(author_id) if author_id is not None else None),
+                "author": username
+                or (str(author_id) if author_id is not None else None),
                 "created_at": getattr(base_tweet, "created_at", None),
                 "like_count": int(metrics.get("like_count", 0)),
                 "reply_count": int(metrics.get("reply_count", 0)),
@@ -174,7 +183,11 @@ if tweepy is not None:  # pragma: no branch
                 was_trending = post.trending
                 post.virality_score = virality
                 post.velocity_score = velocity
-                engagement_total = (post.like_count or 0) + (post.reply_count or 0) + (post.repost_count or 0)
+                engagement_total = (
+                    (post.like_count or 0)
+                    + (post.reply_count or 0)
+                    + (post.repost_count or 0)
+                )
                 post.trending = engagement_total >= settings.trending_min_engagement_mix
 
                 if post.trending and not was_trending:
@@ -185,7 +198,9 @@ if tweepy is not None:  # pragma: no branch
                     }
 
             if trending_payload:
-                snippet = trending_payload["url"] or (trending_payload["text"] or "")[:200]
+                snippet = (
+                    trending_payload["url"] or (trending_payload["text"] or "")[:200]
+                )
                 message = f"🔥 Stream alert {trending_payload['score']:.2f}: {snippet}"
                 send_telegram_message(message)
 
@@ -240,10 +255,14 @@ def start_filtered_stream() -> None:
                     break
                 retry_backoff = min(backoff, 300.0)
                 if tweepy is not None and isinstance(exc, tweepy.TooManyRequests):
-                    log.warning("X stream rate limited; backing off %.1fs", retry_backoff)
+                    log.warning(
+                        "X stream rate limited; backing off %.1fs", retry_backoff
+                    )
                     retry_backoff = min(retry_backoff * 2, 600.0)
                 else:
-                    log.warning("X stream exception; retrying in ~%.1fs: %s", retry_backoff, exc)
+                    log.warning(
+                        "X stream exception; retrying in ~%.1fs: %s", retry_backoff, exc
+                    )
 
                 jitter = random.uniform(0.8, 1.4)
                 time.sleep(retry_backoff * jitter)
@@ -264,9 +283,13 @@ def start_filtered_stream() -> None:
                     if _ensure_rules(client):
                         _client = client
                 except Exception as reconnect_exc:
-                    log.error("Failed to reinitialise X stream client: %s", reconnect_exc)
+                    log.error(
+                        "Failed to reinitialise X stream client: %s", reconnect_exc
+                    )
 
-    _stream_thread = threading.Thread(target=_run_stream, name="XFilteredStream", daemon=True)
+    _stream_thread = threading.Thread(
+        target=_run_stream, name="XFilteredStream", daemon=True
+    )
     _stream_thread.start()
     log.info("X filtered stream started")
 

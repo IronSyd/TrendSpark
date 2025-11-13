@@ -39,7 +39,13 @@ from .growth import (
     set_default_growth_profile,
     deactivate_growth_profile,
 )
-from .auth import ApiTokenMiddleware, SERVICE_TOKEN, SEED_TOKENS, require_roles, AuthenticatedUser
+from .auth import (
+    ApiTokenMiddleware,
+    SERVICE_TOKEN,
+    SEED_TOKENS,
+    require_roles,
+    AuthenticatedUser,
+)
 from .validation import (
     sanitize_text,
     sanitize_string_list,
@@ -82,7 +88,9 @@ def _worker_request(method: str, path: str, payload: dict | None = None):
         headers["Authorization"] = f"Bearer {SERVICE_TOKEN}"
     http_headers = inject_correlation_header(headers) or None
     try:
-        response = httpx.request(method, url, json=payload, headers=http_headers, timeout=10.0)
+        response = httpx.request(
+            method, url, json=payload, headers=http_headers, timeout=10.0
+        )
         response.raise_for_status()
     except httpx.RequestError as exc:
         log.error(
@@ -90,16 +98,28 @@ def _worker_request(method: str, path: str, payload: dict | None = None):
             extra={"method": method, "url": url},
             exc_info=exc,
         )
-        raise HTTPException(status_code=503, detail="Worker service unavailable") from exc
+        raise HTTPException(
+            status_code=503, detail="Worker service unavailable"
+        ) from exc
     except httpx.HTTPStatusError as exc:
         detail = exc.response.text or exc.response.reason_phrase
         log.error(
             "worker.request_error",
-            extra={"method": method, "url": url, "status": exc.response.status_code, "detail": detail},
+            extra={
+                "method": method,
+                "url": url,
+                "status": exc.response.status_code,
+                "detail": detail,
+            },
         )
-        raise HTTPException(status_code=exc.response.status_code, detail=detail) from exc
+        raise HTTPException(
+            status_code=exc.response.status_code, detail=detail
+        ) from exc
 
-    if response.headers.get("content-type", "").startswith("application/json") and response.text:
+    if (
+        response.headers.get("content-type", "").startswith("application/json")
+        and response.text
+    ):
         return response.json()
     if response.text:
         return response.text
@@ -111,12 +131,18 @@ def _track_api_error(path: str, status_code: int) -> None:
         return
     now = datetime.utcnow()
     _api_error_events.append((now, path, status_code))
-    while _api_error_events and (now - _api_error_events[0][0]).total_seconds() > _API_ERROR_WINDOW_SECONDS:
+    while (
+        _api_error_events
+        and (now - _api_error_events[0][0]).total_seconds() > _API_ERROR_WINDOW_SECONDS
+    ):
         _api_error_events.popleft()
     if len(_api_error_events) < _API_ERROR_THRESHOLD:
         return
     global _last_api_error_alert
-    if _last_api_error_alert and now - _last_api_error_alert < _API_ERROR_ALERT_COOLDOWN:
+    if (
+        _last_api_error_alert
+        and now - _last_api_error_alert < _API_ERROR_ALERT_COOLDOWN
+    ):
         return
     recent = list(_api_error_events)[-3:]
     recent_summary = ", ".join(f"{p} ({s})" for _, p, s in recent)
@@ -214,7 +240,11 @@ def _check_telegram() -> tuple[bool, str | None]:
             headers=headers,
             timeout=5.0,
         )
-        data = response.json() if response.headers.get("content-type", "").startswith("application/json") else {}
+        data = (
+            response.json()
+            if response.headers.get("content-type", "").startswith("application/json")
+            else {}
+        )
         if response.status_code == 200 and data.get("ok"):
             username = data.get("result", {}).get("username")
             return True, f"bot:{username}" if username else None
@@ -288,6 +318,7 @@ class BrandProfileIn(BaseModel):
     @classmethod
     def validate_voice_notes(cls, value):
         return sanitize_text(value, max_length=2000)
+
 
 class NotificationOut(BaseModel):
     id: int
@@ -371,6 +402,7 @@ class GrowthUpdateIn(BaseModel):
     @classmethod
     def validate_watchlist(cls, value):
         return sanitize_handles(value, max_items=24, max_length=32)
+
 
 class GrowthOut(BaseModel):
     niche: str | None
@@ -473,7 +505,9 @@ def get_growth_settings_endpoint(
         state = get_growth_state(profile_id)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
-    return GrowthOut(niche=state.niche, keywords=state.keywords, watchlist=state.watchlist).model_dump()
+    return GrowthOut(
+        niche=state.niche, keywords=state.keywords, watchlist=state.watchlist
+    ).model_dump()
 
 
 @limiter.limit("10/minute")
@@ -490,7 +524,9 @@ def update_growth_settings_endpoint(
         watchlist=payload.watchlist,
         profile_id=profile_id,
     )
-    return GrowthOut(niche=state.niche, keywords=state.keywords, watchlist=state.watchlist).model_dump()
+    return GrowthOut(
+        niche=state.niche, keywords=state.keywords, watchlist=state.watchlist
+    ).model_dump()
 
 
 @limiter.limit("30/minute")
@@ -690,7 +726,9 @@ def conversation_detail(
     platform: str,
     post_id: str,
 ):
-    platform = sanitize_identifier(platform, pattern=PLATFORM_IDENTIFIER_RE, max_length=16)
+    platform = sanitize_identifier(
+        platform, pattern=PLATFORM_IDENTIFIER_RE, max_length=16
+    )
     post_id = sanitize_identifier(post_id, pattern=POST_IDENTIFIER_RE, max_length=64)
     with session_scope() as s:
         post = (
@@ -803,7 +841,9 @@ def list_stream_rules(request: Request):
     with session_scope() as s:
         rows = s.query(StreamRule).order_by(StreamRule.created_at.asc()).all()
     return [
-        StreamRuleOut(id=row.id, value=row.value, created_at=row.created_at.isoformat()).model_dump()
+        StreamRuleOut(
+            id=row.id, value=row.value, created_at=row.created_at.isoformat()
+        ).model_dump()
         for row in rows
     ]
 
@@ -852,7 +892,9 @@ def ingest_audit(
             post_id=row.post_id,
             author=row.author,
             fetched_at=row.fetched_at.isoformat(),
-            item_created_at=row.item_created_at.isoformat() if row.item_created_at else None,
+            item_created_at=(
+                row.item_created_at.isoformat() if row.item_created_at else None
+            ),
             summary=row.summary,
         ).model_dump()
         for row in rows

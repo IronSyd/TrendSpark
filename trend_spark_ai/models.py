@@ -36,8 +36,12 @@ class Post(Base):
     view_count: Mapped[int] = mapped_column(Integer, default=0)
     last_alerted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     last_alerted_virality: Mapped[float | None] = mapped_column(Float, nullable=True)
-    trending_since: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, index=True)
-    trending_candidate_since: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, index=True)
+    trending_since: Mapped[datetime | None] = mapped_column(
+        DateTime, nullable=True, index=True
+    )
+    trending_candidate_since: Mapped[datetime | None] = mapped_column(
+        DateTime, nullable=True, index=True
+    )
 
     virality_score: Mapped[float] = mapped_column(Float, default=0.0, index=True)
     velocity_score: Mapped[float] = mapped_column(Float, default=0.0)
@@ -47,9 +51,7 @@ class Post(Base):
     prev_repost_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
     prev_metrics_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
-    __table_args__ = (
-        Index("ix_platform_postid", "platform", "post_id", unique=True),
-    )
+    __table_args__ = (Index("ix_platform_postid", "platform", "post_id", unique=True),)
 
 
 class Idea(Base):
@@ -75,7 +77,9 @@ class Notification(Base):
     __tablename__ = "notifications"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, index=True
+    )
     channel: Mapped[str] = mapped_column(String(32))  # e.g. telegram
     category: Mapped[str | None] = mapped_column(String(32), nullable=True)
     message: Mapped[str] = mapped_column(Text)
@@ -95,9 +99,13 @@ class JobRun(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     job_id: Mapped[str] = mapped_column(String(64), index=True)
-    config_id: Mapped[int | None] = mapped_column(ForeignKey("scheduler_configs.id"), nullable=True, index=True)
+    config_id: Mapped[int | None] = mapped_column(
+        ForeignKey("scheduler_configs.id"), nullable=True, index=True
+    )
     status: Mapped[str] = mapped_column(String(16))  # success|error
-    run_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+    run_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, index=True
+    )
     duration_ms: Mapped[float | None] = mapped_column(Float, nullable=True)
     detail: Mapped[str | None] = mapped_column(Text, nullable=True)
     correlation_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
@@ -108,7 +116,9 @@ class SchedulerConfig(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     job_id: Mapped[str] = mapped_column(String(64), index=True)
-    growth_profile_id: Mapped[int | None] = mapped_column(ForeignKey("growth_config.id"), nullable=True, index=True)
+    growth_profile_id: Mapped[int | None] = mapped_column(
+        ForeignKey("growth_config.id"), nullable=True, index=True
+    )
     name: Mapped[str | None] = mapped_column(String(128), nullable=True)
     cron: Mapped[str] = mapped_column(String(64))
     enabled: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
@@ -132,14 +142,16 @@ class SchedulerLock(Base):
     __tablename__ = "scheduler_locks"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    config_id: Mapped[int] = mapped_column(ForeignKey("scheduler_configs.id", ondelete="CASCADE"), index=True)
+    config_id: Mapped[int] = mapped_column(
+        ForeignKey("scheduler_configs.id", ondelete="CASCADE"), index=True
+    )
     lock_token: Mapped[str] = mapped_column(String(64), unique=True, index=True)
-    acquired_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+    acquired_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, index=True
+    )
     expires_at: Mapped[datetime] = mapped_column(DateTime, index=True)
 
-    __table_args__ = (
-        Index("ix_scheduler_locks_active", "config_id", "expires_at"),
-    )
+    __table_args__ = (Index("ix_scheduler_locks_active", "config_id", "expires_at"),)
 
 
 class GrowthConfig(Base):
@@ -147,10 +159,18 @@ class GrowthConfig(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    name: Mapped[str] = mapped_column(String(128), default="Default profile", nullable=False)
-    is_default: Mapped[bool] = mapped_column(Boolean, default=False, index=True, nullable=False)
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True, index=True, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+    name: Mapped[str] = mapped_column(
+        String(128), default="Default profile", nullable=False
+    )
+    is_default: Mapped[bool] = mapped_column(
+        Boolean, default=False, index=True, nullable=False
+    )
+    is_active: Mapped[bool] = mapped_column(
+        Boolean, default=True, index=True, nullable=False
+    )
     niche: Mapped[str | None] = mapped_column(String(128), nullable=True)
     keywords: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
     watchlist: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
@@ -166,7 +186,9 @@ class IngestionState(Base):
 
     key: Mapped[str] = mapped_column(String(64), primary_key=True)
     value: Mapped[str | None] = mapped_column(String(128), nullable=True)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
 
 
 class IngestAudit(Base):
@@ -178,7 +200,9 @@ class IngestAudit(Base):
     platform: Mapped[str] = mapped_column(String(16), index=True)
     post_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     author: Mapped[str | None] = mapped_column(String(128), nullable=True)
-    fetched_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+    fetched_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, index=True
+    )
     item_created_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     summary: Mapped[str | None] = mapped_column(Text, nullable=True)
 
@@ -215,10 +239,12 @@ class User(Base):
 class UserRole(Base):
     __tablename__ = "user_roles"
 
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
-    role_id: Mapped[int] = mapped_column(ForeignKey("roles.id", ondelete="CASCADE"), primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+    )
+    role_id: Mapped[int] = mapped_column(
+        ForeignKey("roles.id", ondelete="CASCADE"), primary_key=True
+    )
     assigned_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
-    __table_args__ = (
-        UniqueConstraint("user_id", "role_id", name="uq_user_role"),
-    )
+    __table_args__ = (UniqueConstraint("user_id", "role_id", name="uq_user_role"),)

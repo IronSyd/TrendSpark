@@ -84,16 +84,22 @@ def _unauthorized() -> JSONResponse:
 def get_current_user(request: Request) -> AuthenticatedUser:
     user = getattr(request.state, "user", None)
     if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized"
+        )
     return user
 
 
 def require_roles(*roles: str):
     required = {role.lower() for role in roles if role}
 
-    async def dependency(user: AuthenticatedUser = Depends(get_current_user)) -> AuthenticatedUser:
+    async def dependency(
+        user: AuthenticatedUser = Depends(get_current_user),
+    ) -> AuthenticatedUser:
         if required and required.isdisjoint(user.roles):
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden"
+            )
         return user
 
     return dependency

@@ -60,9 +60,7 @@ def _ensure_default_profile(session) -> GrowthConfig:
             return profile
         # existing rows but all inactive; re-activate the newest
         fallback = (
-            session.query(GrowthConfig)
-            .order_by(GrowthConfig.created_at.desc())
-            .first()
+            session.query(GrowthConfig).order_by(GrowthConfig.created_at.desc()).first()
         )
         if fallback:
             fallback.is_active = True
@@ -81,7 +79,9 @@ def _ensure_default_profile(session) -> GrowthConfig:
     return profile
 
 
-def get_growth_state(profile_id: int | None = None, *, allow_inactive: bool = False) -> GrowthState:
+def get_growth_state(
+    profile_id: int | None = None, *, allow_inactive: bool = False
+) -> GrowthState:
     with session_scope() as s:
         _ensure_default_profile(s)
         query = s.query(GrowthConfig)
@@ -92,7 +92,9 @@ def get_growth_state(profile_id: int | None = None, *, allow_inactive: bool = Fa
             cfg = query.first()
         else:
             cfg = (
-                query.filter(GrowthConfig.is_active.is_(True), GrowthConfig.is_default.is_(True))
+                query.filter(
+                    GrowthConfig.is_active.is_(True), GrowthConfig.is_default.is_(True)
+                )
                 .order_by(GrowthConfig.created_at.desc())
                 .first()
             )
@@ -114,10 +116,9 @@ def list_growth_profiles(*, include_inactive: bool = False) -> list[GrowthState]
         query = s.query(GrowthConfig)
         if not include_inactive:
             query = query.filter(GrowthConfig.is_active.is_(True))
-        rows = (
-            query.order_by(GrowthConfig.is_default.desc(), GrowthConfig.created_at.desc())
-            .all()
-        )
+        rows = query.order_by(
+            GrowthConfig.is_default.desc(), GrowthConfig.created_at.desc()
+        ).all()
         return [_to_state(row) for row in rows]
 
 

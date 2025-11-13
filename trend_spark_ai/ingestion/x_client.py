@@ -3,7 +3,12 @@ from datetime import datetime, timedelta, timezone
 from typing import Iterable, Sequence
 import logging
 
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_exponential,
+    retry_if_exception_type,
+)
 
 try:
     import tweepy
@@ -40,11 +45,20 @@ def _get_client() -> "tweepy.Client" | None:
 def _get_trends_api() -> "tweepy.API" | None:
     if tweepy is None:
         return None
-    if not all([settings.x_consumer_key, settings.x_consumer_secret, settings.x_access_token, settings.x_access_token_secret]):
+    if not all(
+        [
+            settings.x_consumer_key,
+            settings.x_consumer_secret,
+            settings.x_access_token,
+            settings.x_access_token_secret,
+        ]
+    ):
         return None
     if "default" in _trends_api_cache:
         return _trends_api_cache["default"]
-    handler_cls = getattr(tweepy, "OAuth1UserHandler", None) or getattr(tweepy, "OAuthHandler", None)
+    handler_cls = getattr(tweepy, "OAuth1UserHandler", None) or getattr(
+        tweepy, "OAuthHandler", None
+    )
     if handler_cls is None:
         return None
     auth = handler_cls(
@@ -71,7 +85,10 @@ def search_recent_tweets(keywords: list[str], max_results: int = 50) -> Iterable
         return []
 
     # Build simple OR query over keywords, excluding retweets
-    query = " OR ".join([f"\"{k}\"" if " " in k else k for k in keywords]) + " -is:retweet lang:en"
+    query = (
+        " OR ".join([f'"{k}"' if " " in k else k for k in keywords])
+        + " -is:retweet lang:en"
+    )
     max_results = min(max(10, max_results), 100)
     since_id = _get_since_id()
     params = {
@@ -176,7 +193,11 @@ def search_recent_tweets(keywords: list[str], max_results: int = 50) -> Iterable
             "reply_count": int(metrics.get("reply_count", 0)),
             "repost_count": int(metrics.get("retweet_count", 0)),
             "quote_count": int(metrics.get("quote_count", 0)),
-            "view_count": int(metrics.get("impression_count", 0)) if "impression_count" in metrics else 0,
+            "view_count": (
+                int(metrics.get("impression_count", 0))
+                if "impression_count" in metrics
+                else 0
+            ),
             "url": post_url,
         }
 
@@ -265,7 +286,7 @@ def _get_tweets_with_retry(client: "tweepy.Client", ids: Sequence[str]):
 
 
 def fetch_trending_hashtags(limit: int = 20) -> list[str]:
-    """Fetch trending hashtags for weighting. Requires OAuth1 credentials; returns lowercase hashtag names without '#'. """
+    """Fetch trending hashtags for weighting. Requires OAuth1 credentials; returns lowercase hashtag names without '#'."""
     limit = max(1, min(limit, 50))
     cache_entry = _trending_cache.get(_TREND_CACHE_KEY)
     now = datetime.utcnow()
@@ -299,4 +320,3 @@ def fetch_trending_hashtags(limit: int = 20) -> list[str]:
         return []
     _trending_cache[_TREND_CACHE_KEY] = (hashtags, now)
     return hashtags[:limit]
-
