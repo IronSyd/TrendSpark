@@ -94,10 +94,19 @@ def craft_replies_for_post(post: Post, tones: Sequence[str]) -> list[dict]:
         "- Stay under 240 characters, no hashtags unless absolutely natural."
     )
     voice = _brand_profile_text(bp)
+    example_block = ""
+    if bp and bp.examples:
+        samples = [ex.strip() for ex in bp.examples if ex and ex.strip()]
+        if samples:
+            formatted = "\n".join(f"- {sample}" for sample in samples[:3])
+            example_block = (
+                "Example replies that capture the desired tone:\n" f"{formatted}\n\n"
+            )
     tone_str = ", ".join(tone_sequence)
     user = (
         "Original post:\n"
         f"{post.text}\n\n"
+        f"{example_block}"
         "Brand voice guidance:\n"
         f"{voice}\n\n"
         "Reply requirements:\n"
