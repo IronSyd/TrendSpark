@@ -181,7 +181,8 @@ class TrendStream(StreamingClientBase):
                     user = self.get_user(id=author_id, user_fields=["username"])
                     if user and user.data and getattr(user.data, "username", None):
                         username = user.data.username
-                        _user_cache[key] = username
+                        if username:
+                            _user_cache[key] = username
                 except Exception:
                     username = None
 
