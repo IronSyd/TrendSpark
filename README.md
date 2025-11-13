@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-# TrendSpark
-“Trend⚡ surfaces the hottest Twitter conversations for your niche in real time; ingest, rank, and get Telegram-ready replies with a single dashboard.
-=======
 # Trend⚡ AI – Growth Intelligence Platform
 
 Trend⚡ ingests viral conversations from X and Reddit, generates on-brand replies and daily ideas, and alerts you the moment your niche starts heating up. The project ships with a FastAPI backend, a React/Vite dashboard, background schedulers, Telegram notifications, and optional real‑time streaming.
