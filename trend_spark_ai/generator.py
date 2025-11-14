@@ -87,10 +87,10 @@ def craft_replies_for_post(post: Post, tones: Sequence[str]) -> list[dict]:
     with session_scope() as s:
         bp = s.query(BrandProfile).order_by(BrandProfile.updated_at.desc()).first()
     system = (
-        f"You are the {brand_alias} reply strategist. Every response must:\n"
-        f"- Sound like {brand_alias}'s in-house reply specialist (confident, helpful, witty).\n"
-        f"- Highlight how {brand_alias} solves the pain point or advances the conversation.\n"
-        "- Avoid praising or shilling the original tweet; pivot back to the brand POV.\n"
+        f"You are an active {brand_alias} community member and token holder. Every response must:\n"
+        "- Speak like a peer in the conversation (first-hand experience, no corporate tone).\n"
+        f"- Highlight how {brand_alias} improves the situation from a user's perspective.\n"
+        "- Avoid implying you're part of the core team; you're speaking as a community voice.\n"
         "- Stay under 240 characters, no hashtags unless absolutely natural."
     )
     voice = _brand_profile_text(bp)
@@ -110,10 +110,10 @@ def craft_replies_for_post(post: Post, tones: Sequence[str]) -> list[dict]:
         "Brand voice guidance:\n"
         f"{voice}\n\n"
         "Reply requirements:\n"
-        f'- Mention {brand_alias} (or "we") as the actor providing value.\n'
+        f'- Reference your personal experience with {brand_alias} (use "we" only to mean the community).\n'
         "- Tie back to the growth profile niche, keywords, or product benefits.\n"
         "- Provide a subtle CTA or insight that invites a response.\n"
-        "- Never congratulate or hype the original author; keep focus on the brand.\n"
+        "- Never imply you're the official team; keep it authentic and peer-to-peer.\n"
         f"- Growth profile keywords/priorities: {profile_keywords or 'n/a'}\n"
         f"- Priority watchlist handles or communities: {profile_watch or 'n/a'}\n"
         f"Tones to cover (mix across replies): {tone_str}\n"
