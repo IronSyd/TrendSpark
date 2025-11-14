@@ -313,7 +313,7 @@ class BrandProfileIn(BaseModel):
     def validate_examples(cls, value):
         return sanitize_string_list(
             value,
-            max_items=5,
+            max_items=12,
             max_length=280,
         )
 
