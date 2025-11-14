@@ -4,6 +4,7 @@ import { Suspense, lazy, type ReactNode } from 'react';
 import AppLayout from './layouts/AppLayout';
 import { FeedbackProvider } from './components/FeedbackProvider';
 import { AuthProvider, useAuth } from './components/AuthProvider';
+import { useBackgroundPrefetch } from './hooks/useBackgroundPrefetch';
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Ideas = lazy(() => import('./pages/Ideas'));
 const BrandVoice = lazy(() => import('./pages/BrandVoice'));
@@ -23,6 +24,7 @@ function SplashScreen({ message }: { message: string }) {
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const { isAuthenticated, isBootstrapping } = useAuth();
+  useBackgroundPrefetch(isAuthenticated && !isBootstrapping);
   if (isBootstrapping) {
     return <SplashScreen message="Checking access..." />;
   }
