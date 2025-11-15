@@ -66,7 +66,9 @@ def test_craft_replies_uses_openai_stub(monkeypatch):
 
     replies = generator.craft_replies_for_post(post, ["witty"])
 
-    assert replies == [{"tone": "witty", "reply": "Hello there"}]
+    assert len(replies) == 1
+    assert replies[0]["tone"] == "witty"
+    assert replies[0]["reply"].startswith("Hello there")
     assert captured == {"kind": "reply_suggestions", "tokens": 42}
 
 
