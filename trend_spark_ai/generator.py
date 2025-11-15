@@ -54,7 +54,7 @@ def _ensure_brand_reference(
     keyword_hint = (state.keywords[0] if state and state.keywords else None) or (
         state.niche if state and state.niche else "web3"
     )
-    suffix = f" {alias} keeps {keyword_hint} builders ahead."
+    suffix = f" I've been using {alias} to keep {keyword_hint} builders ahead."
     for reply in replies:
         text = str(reply.get("reply", "")).strip()
         if not text:
@@ -91,6 +91,7 @@ def craft_replies_for_post(post: Post, tones: Sequence[str]) -> list[dict]:
         "- Speak like a peer in the conversation (first-hand experience, no corporate tone).\n"
         f"- Highlight how {brand_alias} improves the situation from a user's perspective.\n"
         "- Avoid implying you're part of the core team; you're speaking as a community voice.\n"
+        '- Prefer first-person singular ("I", "me"); avoid plural pronouns unless quoting others.\n'
         "- Stay under 240 characters, no hashtags unless absolutely natural."
     )
     voice = _brand_profile_text(bp)
@@ -110,7 +111,7 @@ def craft_replies_for_post(post: Post, tones: Sequence[str]) -> list[dict]:
         "Brand voice guidance:\n"
         f"{voice}\n\n"
         "Reply requirements:\n"
-        f'- Reference your personal experience with {brand_alias} (use "we" only to mean the community).\n'
+        f'- Reference your personal experience with {brand_alias} (stick to "I/me"; avoid plural pronouns).\n'
         "- Tie back to the growth profile niche, keywords, or product benefits.\n"
         "- Provide a subtle CTA or insight that invites a response.\n"
         "- Never imply you're the official team; keep it authentic and peer-to-peer.\n"
