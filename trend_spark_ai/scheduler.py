@@ -237,6 +237,39 @@ def job_ingest_and_rank(
                     f"{r.tone}: {r.reply}" if r.tone else r.reply
                     for r in (fallback_candidate.reply_suggestions or [])
                 ]
+                if not display_suggestions:
+                    tones = growth_state.tone_priorities or settings.tone_priorities
+                    try:
+                        new_replies = craft_replies_for_post(fallback_candidate, tones)
+                        display_suggestions = [
+                            (
+                                f"{r.get('tone')}: {r.get('reply')}"
+                                if r.get("tone")
+                                else str(r.get("reply"))
+                            )
+                            for r in new_replies
+                            if r.get("reply")
+                        ]
+                        if new_replies:
+                            with session_scope() as s:
+                                db_post = (
+                                    s.query(Post)
+                                    .filter(
+                                        Post.platform == fallback_candidate.platform,
+                                        Post.post_id == fallback_candidate.post_id,
+                                    )
+                                    .first()
+                                )
+                                if db_post:
+                                    db_post.reply_suggestions = new_replies
+                    except Exception:
+                        log.exception(
+                            "Failed to generate fallback reply suggestions",
+                            extra={
+                                "platform": fallback_candidate.platform,
+                                "post_id": fallback_candidate.post_id,
+                            },
+                        )
                 fallback_lines = [
                     f"Engagement suggestion ({now.strftime('%H:%M')}) - monitoring for traction.",
                     f"- {display_name}",
