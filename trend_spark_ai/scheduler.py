@@ -154,13 +154,15 @@ def job_ingest_and_rank(
                         )
                         continue
 
-                    suggestions = list(post.reply_suggestions or [])
-                    if not suggestions:
+                    suggestions_payload: list[dict[str, Any]] = list(
+                        post.reply_suggestions or []
+                    )
+                    if not suggestions_payload:
                         generated = craft_replies_for_post(
                             post, settings.tone_priorities
                         )
-                        suggestions = generated or []
-                        if suggestions:
+                        suggestions_payload = generated or []
+                        if suggestions_payload:
                             db_post = (
                                 s.query(Post)
                                 .filter(
@@ -170,7 +172,7 @@ def job_ingest_and_rank(
                                 .first()
                             )
                             if db_post:
-                                db_post.reply_suggestions = suggestions
+                                db_post.reply_suggestions = suggestions_payload
                                 s.flush()
 
                     handle = (post.author or "").lstrip("@")
@@ -181,19 +183,19 @@ def job_ingest_and_rank(
                     summary_lines.append(f"• {handle_display}")
                     summary_lines.append(f"  {preview}")
 
-                display_suggestions = []
-                for suggestion in suggestions[:2]:
-                    if isinstance(suggestion, dict):
-                        tone = suggestion.get("tone")
-                        reply_text = suggestion.get("reply")
-                    else:
-                        tone = None
-                        reply_text = str(suggestion)
-                    if not reply_text:
-                        continue
-                    display_suggestions.append({"tone": tone, "reply": reply_text})
-                    tone_prefix = f"[{tone}] " if tone else ""
-                    summary_lines.append(f"    - {tone_prefix}{reply_text}")
+                    display_suggestions: list[dict[str, str | None]] = []
+                    for suggestion in suggestions_payload[:2]:
+                        if isinstance(suggestion, dict):
+                            tone = suggestion.get("tone")
+                            reply_text = suggestion.get("reply")
+                        else:
+                            tone = None
+                            reply_text = str(suggestion)
+                        if not reply_text:
+                            continue
+                        display_suggestions.append({"tone": tone, "reply": reply_text})  # type: ignore[arg-type]
+                        tone_prefix = f"[{tone}] " if tone else ""
+                        summary_lines.append(f"    - {tone_prefix}{reply_text}")
 
                     payload_posts.append(
                         {
@@ -201,7 +203,7 @@ def job_ingest_and_rank(
                             "post_id": post.post_id,
                             "virality": post.virality_score,
                             "velocity": post.velocity_score,
-                            "suggestions": display_suggestions,
+                            "suggestions": suggestions_payload,
                         }
                     )
 
