@@ -96,7 +96,7 @@ def job_ingest_and_rank(
             except Exception as exc:
                 log.warning("failed to load trending hashtags: %s", exc)
                 trending_hashtags = []
-            changed = rank_and_mark(
+            _changed = rank_and_mark(
                 recent_minutes=recency_minutes,
                 priority_keywords=growth_state.keywords,
                 priority_watchlist=growth_state.watchlist,
