@@ -233,12 +233,20 @@ def job_ingest_and_rank(
                 display_name = (
                     f"@{handle}" if handle else fallback_candidate.author or "Unknown"
                 )
+                display_suggestions = [
+                    f"{r.tone}: {r.reply}" if r.tone else r.reply
+                    for r in (fallback_candidate.reply_suggestions or [])
+                ]
                 fallback_lines = [
-                    f"Engagement suggestion ({now.strftime('%H:%M')}) – monitoring for traction.",
+                    f"Engagement suggestion ({now.strftime('%H:%M')}) - monitoring for traction.",
                     f"- {display_name}",
                     f"  {fallback_candidate.url or fallback_candidate.text[:90]}",
                     f"  {eng_total} engagements; watching for lift.",
                 ]
+                if display_suggestions:
+                    fallback_lines.append(
+                        f"  {len(display_suggestions)} reply suggestions queued."
+                    )
                 payload = {
                     "fallback": True,
                     "posts": [
@@ -247,6 +255,7 @@ def job_ingest_and_rank(
                             "post_id": fallback_candidate.post_id,
                             "engagement_total": eng_total,
                             "fallback": True,
+                            "suggestions": display_suggestions,
                         }
                     ],
                 }
