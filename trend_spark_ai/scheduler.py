@@ -181,19 +181,19 @@ def job_ingest_and_rank(
                     summary_lines.append(f"• {handle_display}")
                     summary_lines.append(f"  {preview}")
 
-                    display_suggestions = []
-                    for suggestion in suggestions[:2]:
-                        if isinstance(suggestion, dict):
-                            tone = suggestion.get("tone")
-                            reply_text = suggestion.get("reply")
-                        else:
-                            tone = None
-                            reply_text = str(suggestion)
-                        if not reply_text:
-                            continue
-                        display_suggestions.append({"tone": tone, "reply": reply_text})
-                        tone_prefix = f"[{tone}] " if tone else ""
-                        summary_lines.append(f"    - {tone_prefix}{reply_text}")
+                display_suggestions = []
+                for suggestion in suggestions[:2]:
+                    if isinstance(suggestion, dict):
+                        tone = suggestion.get("tone")
+                        reply_text = suggestion.get("reply")
+                    else:
+                        tone = None
+                        reply_text = str(suggestion)
+                    if not reply_text:
+                        continue
+                    display_suggestions.append({"tone": tone, "reply": reply_text})
+                    tone_prefix = f"[{tone}] " if tone else ""
+                    summary_lines.append(f"    - {tone_prefix}{reply_text}")
 
                     payload_posts.append(
                         {
@@ -233,26 +233,26 @@ def job_ingest_and_rank(
                 display_name = (
                     f"@{handle}" if handle else fallback_candidate.author or "Unknown"
                 )
-                suggestions_payload: list[dict[str, Any]] = list(
+                fallback_suggestions_payload: list[dict[str, Any]] = list(
                     fallback_candidate.reply_suggestions or []
                 )
-                display_suggestions: list[str] = [
+                fallback_display: list[str] = [
                     (
                         f"{r.get('tone')}: {r.get('reply')}"
                         if r.get("tone")
                         else str(r.get("reply"))
                     )
-                    for r in suggestions_payload
+                    for r in fallback_suggestions_payload
                     if r.get("reply")
                 ]
-                if not suggestions_payload:
+                if not fallback_suggestions_payload:
                     tones = (
                         getattr(growth_state, "tone_priorities", None)
                         or settings.tone_priorities
                     )
                     try:
                         new_replies = craft_replies_for_post(fallback_candidate, tones)
-                        display_suggestions = [
+                        fallback_display = [
                             (
                                 f"{r.get('tone')}: {r.get('reply')}"
                                 if r.get("tone")
@@ -261,7 +261,7 @@ def job_ingest_and_rank(
                             for r in new_replies
                             if r.get("reply")
                         ]
-                        suggestions_payload = new_replies
+                        fallback_suggestions_payload = new_replies
                         if new_replies:
                             with session_scope() as s:
                                 db_post = (
@@ -288,9 +288,9 @@ def job_ingest_and_rank(
                     f"  {fallback_candidate.url or fallback_candidate.text[:90]}",
                     f"  {eng_total} engagements; watching for lift.",
                 ]
-                if display_suggestions:
+                if fallback_display:
                     fallback_lines.append(
-                        f"  {len(display_suggestions)} reply suggestions queued."
+                        f"  {len(fallback_display)} reply suggestions queued."
                     )
                 payload = {
                     "fallback": True,
@@ -300,7 +300,7 @@ def job_ingest_and_rank(
                             "post_id": fallback_candidate.post_id,
                             "engagement_total": eng_total,
                             "fallback": True,
-                            "suggestions": suggestions_payload,
+                            "suggestions": fallback_suggestions_payload,
                         }
                     ],
                 }
