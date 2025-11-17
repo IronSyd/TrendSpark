@@ -103,6 +103,14 @@ def job_ingest_and_rank(
                 trending_hashtags=trending_hashtags,
             )
             if not changed:
+                log.info(
+                    "alert.skip_no_changes",
+                    extra={
+                        "job": "ingest_rank",
+                        "growth_profile_id": growth_state.id,
+                        "growth_profile_name": growth_state.name,
+                    },
+                )
                 outcome = "no_changes"
                 return
 
