@@ -94,7 +94,8 @@ def craft_replies_for_post(post: Post, tones: Sequence[str]) -> list[dict]:
         "- Keep it concise (1-2 sentences, under 240 chars). A short follow-up question is okay if it fits.\n"
         "- Mention XMoney or $XMN once, in the style shown in the example posts "
         "(vary verbs; avoid boilerplate).\n"
-        "- Include a subtle CTA or insight aligned to the growth profile tone; avoid hype, hashtags, and promo-code shilling.\n"
+        "- Include a subtle CTA or insight aligned to the growth profile tone; avoid hype, hashtags, "
+        "and promo-code shilling.\n"
         "- Never imply you are staff; you are a community/user voice."
     )
     voice = _brand_profile_text(bp)
