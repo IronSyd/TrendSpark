@@ -113,11 +113,9 @@ def job_ingest_and_rank(
                     created = as_utc_naive(post.created_at)
                     if created is None:
                         continue
+                    if post.last_alerted_at:
+                        continue
                     if created >= recent_cutoff:
-                        if post.last_alerted_at:
-                            alerted_at = as_utc_naive(post.last_alerted_at)
-                            if alerted_at and alerted_at >= cutoff:
-                                continue
                         yield post
 
             fallback_candidate = max(
@@ -132,6 +130,8 @@ def job_ingest_and_rank(
             with session_scope() as s:
                 for post in posts:
                     if not post.trending:
+                        continue
+                    if post.last_alerted_at:
                         continue
                     ts = as_utc_naive(post.trending_since)
                     if ts is None:
