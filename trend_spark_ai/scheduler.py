@@ -233,12 +233,21 @@ def job_ingest_and_rank(
                 display_name = (
                     f"@{handle}" if handle else fallback_candidate.author or "Unknown"
                 )
+                suggestions_payload = list(fallback_candidate.reply_suggestions or [])
                 display_suggestions = [
-                    f"{r.tone}: {r.reply}" if r.tone else r.reply
-                    for r in (fallback_candidate.reply_suggestions or [])
+                    (
+                        f"{r.get('tone')}: {r.get('reply')}"
+                        if r.get("tone")
+                        else str(r.get("reply"))
+                    )
+                    for r in suggestions_payload
+                    if r.get("reply")
                 ]
-                if not display_suggestions:
-                    tones = growth_state.tone_priorities or settings.tone_priorities
+                if not suggestions_payload:
+                    tones = (
+                        getattr(growth_state, "tone_priorities", None)
+                        or settings.tone_priorities
+                    )
                     try:
                         new_replies = craft_replies_for_post(fallback_candidate, tones)
                         display_suggestions = [
@@ -250,6 +259,7 @@ def job_ingest_and_rank(
                             for r in new_replies
                             if r.get("reply")
                         ]
+                        suggestions_payload = new_replies
                         if new_replies:
                             with session_scope() as s:
                                 db_post = (
@@ -288,7 +298,7 @@ def job_ingest_and_rank(
                             "post_id": fallback_candidate.post_id,
                             "engagement_total": eng_total,
                             "fallback": True,
-                            "suggestions": display_suggestions,
+                            "suggestions": suggestions_payload,
                         }
                     ],
                 }
