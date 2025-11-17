@@ -98,7 +98,7 @@ def upsert_post(session, data: dict) -> Post:
 
 
 def ingest_cycle(
-    max_x: int = 30,
+    max_x: int = 50,
     max_reddit_per_sub: int = 25,
     keywords: Sequence[str] | None = None,
 ) -> int:

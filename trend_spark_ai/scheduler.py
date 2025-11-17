@@ -65,7 +65,7 @@ def _track_job_result(job_id: str, status: str, detail: str | None = None) -> No
 
 def job_ingest_and_rank(
     *,
-    max_x: int = 30,
+    max_x: int = 50,
     max_reddit_per_sub: int = 25,
     alert_recency_minutes: int | None = None,
     top_limit: int = 10,
@@ -401,7 +401,7 @@ def _ensure_default_configs() -> None:
                 name="ingest + rank",
                 cron="*/30 * * * *",
                 growth_profile_id=profile_id,
-                parameters={"max_x": 30},
+                parameters={"max_x": 50},
             ),
             SchedulerConfig(
                 job_id="gen_replies",
