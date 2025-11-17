@@ -86,10 +86,10 @@ def search_recent_tweets(
         log.info("X_BEARER_TOKEN not set; skipping X ingestion")
         return
 
-    # Build simple OR query over keywords, excluding retweets
+    # Build simple OR query over keywords, excluding replies (allow originals, RTs, and quotes)
     query = (
         " OR ".join([f'"{k}"' if " " in k else k for k in keywords])
-        + " -is:retweet lang:en"
+        + " -is:reply lang:en"
     )
     max_results = min(max(10, max_results), 100)
     since_id = _get_since_id()
@@ -165,7 +165,13 @@ def search_recent_tweets(
 
         base_tweet = t
         metrics = m
+        # Skip replies; for retweets unwrap to original; allow quotes as-is
         if getattr(t, "referenced_tweets", None):
+            is_reply = any(
+                getattr(ref, "type", None) == "replied_to" for ref in t.referenced_tweets
+            )
+            if is_reply:
+                continue
             for ref in t.referenced_tweets:
                 if getattr(ref, "type", None) == "retweeted":
                     original = tweet_map.get(str(ref.id))

@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { UseQueryResult } from '@tanstack/react-query';
 
@@ -20,6 +21,33 @@ import type {
 
 type QueryResultWithData<T> = Omit<UseQueryResult<T, unknown>, 'data'> & { data: T };
 
+type CachedEntry<T> = { data: T; updatedAt: number };
+
+function readCached<T>(key: string): { data?: T; updatedAt?: number } {
+  if (typeof window === 'undefined') return {};
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return {};
+    const parsed: CachedEntry<T> = JSON.parse(raw);
+    if (parsed?.data !== undefined) {
+      return { data: parsed.data, updatedAt: parsed.updatedAt };
+    }
+  } catch {
+    // ignore cache read errors
+  }
+  return {};
+}
+
+function writeCached<T>(key: string, data: T) {
+  if (typeof window === 'undefined') return;
+  try {
+    const payload: CachedEntry<T> = { data, updatedAt: Date.now() };
+    localStorage.setItem(key, JSON.stringify(payload));
+  } catch {
+    // ignore cache write errors
+  }
+}
+
 function withFallback<T>(query: UseQueryResult<T, unknown>, fallback: T): QueryResultWithData<T> {
   const data = query.data ?? fallback;
   return {
@@ -38,12 +66,24 @@ export function useHealth(options?: { enabled?: boolean }) {
 }
 
 export function useTopConversations(limit = 20) {
+  const cacheKey = `ts_top_conversations_${limit}`;
+  const cached = readCached<Conversation[]>(cacheKey);
+  const fallback: Conversation[] = cached.data ?? [];
+
   const query = useQuery<Conversation[]>({
     queryKey: ['conversations', limit],
     queryFn: () => api.getTopConversations(limit),
     refetchInterval: API_POLL_INTERVAL,
+    placeholderData: cached.data,
+    staleTime: API_POLL_INTERVAL,
+    gcTime: API_POLL_INTERVAL * 2,
   });
-  return withFallback(query, []);
+  useEffect(() => {
+    if (query.data) {
+      writeCached(cacheKey, query.data);
+    }
+  }, [cacheKey, query.data]);
+  return withFallback(query, fallback);
 }
 
 export function useClearConversations() {
@@ -76,10 +116,22 @@ export function useIdeas() {
 }
 
 export function useBrandProfile() {
-  return useQuery<BrandProfile>({
+  const cacheKey = 'ts_brand_profile';
+  const cached = readCached<BrandProfile>(cacheKey);
+
+  const query = useQuery<BrandProfile>({
     queryKey: ['brand-profile'],
     queryFn: api.getBrandProfile,
+    placeholderData: cached.data,
+    staleTime: API_POLL_INTERVAL,
+    gcTime: API_POLL_INTERVAL * 2,
   });
+  useEffect(() => {
+    if (query.data) {
+      writeCached(cacheKey, query.data);
+    }
+  }, [cacheKey, query.data]);
+  return query;
 }
 
 export function useUpdateBrandProfile() {
@@ -103,10 +155,22 @@ export function useAlerts(limit = 25, options?: { enabled?: boolean }) {
 }
 
 export function useGrowthSettings() {
-  return useQuery<GrowthSettings>({
+  const cacheKey = 'ts_growth_settings_default';
+  const cached = readCached<GrowthSettings>(cacheKey);
+
+  const query = useQuery<GrowthSettings>({
     queryKey: ['growth-settings'],
     queryFn: () => api.getGrowthSettings(),
+    placeholderData: cached.data,
+    staleTime: API_POLL_INTERVAL,
+    gcTime: API_POLL_INTERVAL * 2,
   });
+  useEffect(() => {
+    if (query.data) {
+      writeCached(cacheKey, query.data);
+    }
+  }, [cacheKey, query.data]);
+  return query;
 }
 
 export function useUpdateGrowthSettings() {

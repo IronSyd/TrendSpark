@@ -66,7 +66,8 @@ def _build_default_rule() -> list[str]:
     parts = [f'"{k}"' if " " in k else k for k in keywords]
     query = " OR ".join(parts)
     clause = query if len(parts) == 1 else f"({query})"
-    return [f"{clause} lang:en -is:retweet"]
+    # Exclude replies, allow originals, retweets, and quotes
+    return [f"{clause} lang:en -is:reply"]
 
 
 def _desired_rules() -> list[str]:
@@ -135,7 +136,14 @@ class TrendStream(StreamingClientBase):
         author_id = getattr(tweet, "author_id", None)
         username = None
 
+        # Drop replies; unwind retweets to the original tweet; allow quotes as-is
         if getattr(tweet, "referenced_tweets", None):
+            is_reply = any(
+                getattr(ref, "type", None) == "replied_to"
+                for ref in tweet.referenced_tweets
+            )
+            if is_reply:
+                return
             for ref in tweet.referenced_tweets:
                 if getattr(ref, "type", None) != "retweeted":
                     continue

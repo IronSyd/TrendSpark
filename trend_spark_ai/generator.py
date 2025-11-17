@@ -54,7 +54,7 @@ def _ensure_brand_reference(
     keyword_hint = (state.keywords[0] if state and state.keywords else None) or (
         state.niche if state and state.niche else "web3"
     )
-    suffix = f" I've been using {alias} to keep {keyword_hint} builders ahead."
+    suffix = f" I use {alias} for {keyword_hint} because it already works."
     for reply in replies:
         text = str(reply.get("reply", "")).strip()
         if not text:
@@ -88,11 +88,12 @@ def craft_replies_for_post(post: Post, tones: Sequence[str]) -> list[dict]:
         bp = s.query(BrandProfile).order_by(BrandProfile.updated_at.desc()).first()
     system = (
         f"You are an active {brand_alias} community member and token holder. Every response must:\n"
-        "- Speak like a peer in the conversation (first-hand experience, no corporate tone).\n"
-        f"- Highlight how {brand_alias} improves the situation from a user's perspective.\n"
-        "- Avoid implying you're part of the core team; you're speaking as a community voice.\n"
-        '- Prefer first-person singular ("I", "me"); avoid plural pronouns unless quoting others.\n'
-        "- Stay under 240 characters, no hashtags unless absolutely natural."
+        "- Start with a stance on the original post (agree, disagree, or add a take).\n"
+        f"- Then segue into how you personally use {brand_alias} in that context (first-person only: I/me).\n"
+        "- Sound like a peer, not the team; never use plural pronouns (we/our) or corporate voice.\n"
+        "- Keep it concise (1-2 sentences, under 240 chars), avoid hype, hashtags, and promo-code shilling.\n"
+        "- Include a subtle CTA or insight aligned to the growth profile tone.\n"
+        "- Never imply you are staff; you are a community/user voice."
     )
     voice = _brand_profile_text(bp)
     example_block = ""
@@ -103,6 +104,16 @@ def craft_replies_for_post(post: Post, tones: Sequence[str]) -> list[dict]:
             example_block = (
                 "Example replies that capture the desired tone:\n" f"{formatted}\n\n"
             )
+    stance_examples = (
+        "- Utility posts: \"Utility matters. I stick with XMoney because it already handles my cross-border payouts.\"\n"
+        "- Presale promos: \"Presales feel risky; I use XMoney since it is live and keeps fees predictable.\"\n"
+        "- Comparisons: \"Competition is good. For my day-to-day, XMoney has been the reliable option.\""
+    )
+    example_block = (
+        f"{example_block}"
+        "Reply structure: stance on the post + personal XMoney note (first-person, no we/our).\n"
+        f"{stance_examples}\n\n"
+    )
     tone_str = ", ".join(tone_sequence)
     user = (
         "Original post:\n"
@@ -111,10 +122,11 @@ def craft_replies_for_post(post: Post, tones: Sequence[str]) -> list[dict]:
         "Brand voice guidance:\n"
         f"{voice}\n\n"
         "Reply requirements:\n"
-        f'- Reference your personal experience with {brand_alias} (stick to "I/me"; avoid plural pronouns).\n'
-        "- Tie back to the growth profile niche, keywords, or product benefits.\n"
+        "- First sentence: agree/disagree/add reasoning about the original post.\n"
+        f'- Second sentence: your personal experience with {brand_alias} (I/me only) connected to that stance.\n'
+        "- Tie to the growth profile niche/keywords/benefits; keep it peer-to-peer, not corporate.\n"
         "- Provide a subtle CTA or insight that invites a response.\n"
-        "- Never imply you're the official team; keep it authentic and peer-to-peer.\n"
+        "- Never imply you're the official team; avoid plural pronouns.\n"
         f"- Growth profile keywords/priorities: {profile_keywords or 'n/a'}\n"
         f"- Priority watchlist handles or communities: {profile_watch or 'n/a'}\n"
         f"Tones to cover (mix across replies): {tone_str}\n"
