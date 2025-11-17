@@ -78,7 +78,7 @@ class Settings(BaseSettings):
         ),
     )
     trending_min_views: int = Field(
-        default=5000,
+        default=500,
         validation_alias=AliasChoices("TREND_MIN_VIEWS", "TRENDING_MIN_VIEWS"),
     )
     trend_author_scale_min: float = Field(default=0.5)
