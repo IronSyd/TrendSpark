@@ -105,9 +105,9 @@ def craft_replies_for_post(post: Post, tones: Sequence[str]) -> list[dict]:
                 "Example replies that capture the desired tone:\n" f"{formatted}\n\n"
             )
     stance_examples = (
-        "- Utility posts: \"Utility matters. I stick with XMoney because it already handles my cross-border payouts.\"\n"
-        "- Presale promos: \"Presales feel risky; I use XMoney since it is live and keeps fees predictable.\"\n"
-        "- Comparisons: \"Competition is good. For my day-to-day, XMoney has been the reliable option.\""
+        '- Utility posts: "Utility matters. I stick with XMoney because it already handles my cross-border payouts."\n'
+        '- Presale promos: "Presales feel risky; I use XMoney since it is live and keeps fees predictable."\n'
+        '- Comparisons: "Competition is good. For my day-to-day, XMoney has been the reliable option."'
     )
     example_block = (
         f"{example_block}"
@@ -123,7 +123,7 @@ def craft_replies_for_post(post: Post, tones: Sequence[str]) -> list[dict]:
         f"{voice}\n\n"
         "Reply requirements:\n"
         "- First sentence: agree/disagree/add reasoning about the original post.\n"
-        f'- Second sentence: your personal experience with {brand_alias} (I/me only) connected to that stance.\n'
+        f"- Second sentence: your personal experience with {brand_alias} (I/me only) connected to that stance.\n"
         "- Tie to the growth profile niche/keywords/benefits; keep it peer-to-peer, not corporate.\n"
         "- Provide a subtle CTA or insight that invites a response.\n"
         "- Never imply you're the official team; avoid plural pronouns.\n"

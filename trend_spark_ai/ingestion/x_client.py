@@ -168,7 +168,8 @@ def search_recent_tweets(
         # Skip replies; for retweets unwrap to original; allow quotes as-is
         if getattr(t, "referenced_tweets", None):
             is_reply = any(
-                getattr(ref, "type", None) == "replied_to" for ref in t.referenced_tweets
+                getattr(ref, "type", None) == "replied_to"
+                for ref in t.referenced_tweets
             )
             if is_reply:
                 continue
