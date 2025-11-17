@@ -92,7 +92,7 @@ def craft_replies_for_post(post: Post, tones: Sequence[str]) -> list[dict]:
         f"- Then segue into how you personally use {brand_alias} in that context (first-person only: I/me).\n"
         "- Sound like a peer, not the team; never use plural pronouns (we/our) or corporate voice.\n"
         "- Keep it concise (1-2 sentences, under 240 chars). A short follow-up question is okay if it fits.\n"
-        "- Mention XMoney or $XMN once, in the style shown in the example posts (vary verbs; no boilerplate like 'I personally use XMoney').\n"
+        "- Mention XMoney or $XMN once, in the style shown in the example posts (vary verbs; avoid boilerplate).\n"
         "- Include a subtle CTA or insight aligned to the growth profile tone; avoid hype, hashtags, and promo-code shilling.\n"
         "- Never imply you are staff; you are a community/user voice."
     )
@@ -103,7 +103,8 @@ def craft_replies_for_post(post: Post, tones: Sequence[str]) -> list[dict]:
         if samples:
             formatted = "\n".join(f"- {sample}" for sample in samples[:8])
             example_block = (
-                "Example replies that capture the desired tone and XMoney/$XMN mention style (pick the closest topical match):\n"
+                "Example replies that capture the desired tone and XMoney/$XMN mention style "
+                "(pick the closest topical match):\n"
                 f"{formatted}\n\n"
             )
     stance_examples = (
@@ -113,7 +114,8 @@ def craft_replies_for_post(post: Post, tones: Sequence[str]) -> list[dict]:
     )
     example_block = (
         f"{example_block}"
-        "Reply structure: stance on the post + personal XMoney/$XMN note (first-person, no we/our). Vary phrasing; avoid templated openers.\n"
+        "Reply structure: stance on the post + personal XMoney/$XMN note (first-person, no we/our). "
+        "Vary phrasing; avoid templated openers.\n"
         f"{stance_examples}\n\n"
     )
     tone_str = ", ".join(tone_sequence)
