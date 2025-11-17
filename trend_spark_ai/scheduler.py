@@ -65,7 +65,7 @@ def _track_job_result(job_id: str, status: str, detail: str | None = None) -> No
 
 def job_ingest_and_rank(
     *,
-    max_x: int = 10,
+    max_x: int = 30,
     max_reddit_per_sub: int = 25,
     alert_recency_minutes: int | None = None,
     top_limit: int = 10,
@@ -102,17 +102,6 @@ def job_ingest_and_rank(
                 priority_watchlist=growth_state.watchlist,
                 trending_hashtags=trending_hashtags,
             )
-            if not changed:
-                log.info(
-                    "alert.skip_no_changes",
-                    extra={
-                        "job": "ingest_rank",
-                        "growth_profile_id": growth_state.id,
-                        "growth_profile_name": growth_state.name,
-                    },
-                )
-                outcome = "no_changes"
-                return
 
             now = datetime.utcnow()
             cutoff = now - timedelta(minutes=recency_minutes)
@@ -403,7 +392,7 @@ def _ensure_default_configs() -> None:
                 name="ingest + rank",
                 cron="*/30 * * * *",
                 growth_profile_id=profile_id,
-                parameters={"max_x": 10},
+                parameters={"max_x": 30},
             ),
             SchedulerConfig(
                 job_id="gen_replies",
