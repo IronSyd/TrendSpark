@@ -77,6 +77,10 @@ class Settings(BaseSettings):
             "TRENDING_MIN_ENGAGEMENT_MIX",
         ),
     )
+    trending_min_views: int = Field(
+        default=5000,
+        validation_alias=AliasChoices("TREND_MIN_VIEWS", "TRENDING_MIN_VIEWS"),
+    )
     trend_author_scale_min: float = Field(default=0.5)
     trend_author_scale_max: float = Field(default=2.5)
     profile_match_bonus: float = Field(default=0.1)
@@ -136,6 +140,7 @@ class Settings(BaseSettings):
         "trending_min_likes",
         "trending_min_responses",
         "trending_min_engagement_mix",
+        "trending_min_views",
         "recency_bonus_minutes",
         "trend_expire_minutes",
     )

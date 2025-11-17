@@ -69,7 +69,13 @@ def _required_engagement(
     author: str | None,
     author_avgs: dict[str, float],
     global_reference: float,
+    view_count: int,
+    min_views: int,
 ) -> int:
+    # If views alone clear the view threshold, qualify immediately
+    if min_views > 0 and view_count >= min_views:
+        return 0
+
     base_required = max(1, settings.trending_min_engagement_mix)
     ratio = 1.0
     if author and author in author_avgs and global_reference > 0:
@@ -166,7 +172,11 @@ def rank_and_mark(
                 (p.like_count or 0) + (p.repost_count or 0) + (p.reply_count or 0)
             )
             required_engagement = _required_engagement(
-                p.author, author_avgs, global_reference
+                p.author,
+                author_avgs,
+                global_reference,
+                p.view_count or 0,
+                settings.trending_min_views,
             )
             engagement_ok = engagement_total >= required_engagement
             qualifies = engagement_ok
