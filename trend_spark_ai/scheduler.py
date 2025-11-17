@@ -233,8 +233,10 @@ def job_ingest_and_rank(
                 display_name = (
                     f"@{handle}" if handle else fallback_candidate.author or "Unknown"
                 )
-                suggestions_payload = list(fallback_candidate.reply_suggestions or [])
-                display_suggestions = [
+                suggestions_payload: list[dict[str, Any]] = list(
+                    fallback_candidate.reply_suggestions or []
+                )
+                display_suggestions: list[str] = [
                     (
                         f"{r.get('tone')}: {r.get('reply')}"
                         if r.get("tone")
