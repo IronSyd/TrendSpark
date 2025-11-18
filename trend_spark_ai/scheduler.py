@@ -238,13 +238,14 @@ def job_ingest_and_rank(
                 fallback_suggestions_payload: list[dict[str, Any]] = list(
                     fallback_candidate.reply_suggestions or []
                 )
+                preview_suggestions = fallback_suggestions_payload[:2]
                 fallback_display: list[str] = [
                     (
                         f"{r.get('tone')}: {r.get('reply')}"
                         if r.get("tone")
                         else str(r.get("reply"))
                     )
-                    for r in fallback_suggestions_payload
+                    for r in preview_suggestions
                     if r.get("reply")
                 ]
                 if not fallback_suggestions_payload:
@@ -292,8 +293,10 @@ def job_ingest_and_rank(
                 ]
                 if fallback_display:
                     fallback_lines.append(
-                        f"  {len(fallback_display)} reply suggestions queued."
+                        f"  {len(fallback_display)} reply suggestions queued:"
                     )
+                    for reply_text in fallback_display:
+                        fallback_lines.append(f"    - {reply_text}")
                 payload = {
                     "fallback": True,
                     "posts": [
@@ -302,7 +305,7 @@ def job_ingest_and_rank(
                             "post_id": fallback_candidate.post_id,
                             "engagement_total": eng_total,
                             "fallback": True,
-                            "suggestions": fallback_suggestions_payload,
+                            "suggestions": preview_suggestions,
                         }
                     ],
                 }
