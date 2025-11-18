@@ -180,7 +180,7 @@ def job_ingest_and_rank(
                     if handle:
                         handle_display = f"{handle_display} | {handle}"
                     preview = (post.url or post.text[:90]).strip()
-                    summary_lines.append(f"• {handle_display}")
+                    summary_lines.append(f"- {handle_display}")
                     summary_lines.append(f"  {preview}")
 
                     display_suggestions: list[dict[str, str | None]] = []
@@ -193,7 +193,7 @@ def job_ingest_and_rank(
                             reply_text = str(suggestion)
                         if not reply_text:
                             continue
-                        display_suggestions.append({"tone": tone, "reply": reply_text})  # type: ignore[arg-type]
+                        display_suggestions.append({"tone": tone, "reply": reply_text})
                         tone_prefix = f"[{tone}] " if tone else ""
                         summary_lines.append(f"    - {tone_prefix}{reply_text}")
 
@@ -238,16 +238,6 @@ def job_ingest_and_rank(
                 fallback_suggestions_payload: list[dict[str, Any]] = list(
                     fallback_candidate.reply_suggestions or []
                 )
-                preview_suggestions = fallback_suggestions_payload[:2]
-                fallback_display: list[str] = [
-                    (
-                        f"{r.get('tone')}: {r.get('reply')}"
-                        if r.get("tone")
-                        else str(r.get("reply"))
-                    )
-                    for r in preview_suggestions
-                    if r.get("reply")
-                ]
                 if not fallback_suggestions_payload:
                     tones = (
                         getattr(growth_state, "tone_priorities", None)
@@ -255,16 +245,7 @@ def job_ingest_and_rank(
                     )
                     try:
                         new_replies = craft_replies_for_post(fallback_candidate, tones)
-                        fallback_display = [
-                            (
-                                f"{r.get('tone')}: {r.get('reply')}"
-                                if r.get("tone")
-                                else str(r.get("reply"))
-                            )
-                            for r in new_replies
-                            if r.get("reply")
-                        ]
-                        fallback_suggestions_payload = new_replies
+                        fallback_suggestions_payload = new_replies or []
                         if new_replies:
                             with session_scope() as s:
                                 db_post = (
@@ -285,6 +266,16 @@ def job_ingest_and_rank(
                                 "post_id": fallback_candidate.post_id,
                             },
                         )
+                preview_suggestions = fallback_suggestions_payload[:2]
+                fallback_display: list[str] = [
+                    (
+                        f"{r.get('tone')}: {r.get('reply')}"
+                        if r.get("tone")
+                        else str(r.get("reply"))
+                    )
+                    for r in preview_suggestions
+                    if r.get("reply")
+                ]
                 fallback_lines = [
                     f"Engagement suggestion ({now.strftime('%H:%M')}) - monitoring for traction.",
                     f"- {display_name}",
