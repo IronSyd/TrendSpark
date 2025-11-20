@@ -61,7 +61,7 @@ export default function AutomationPage() {
     targeting: true,
     rules: false,
     watchlist: false,
-    scheduler: false,
+    scheduler: true,
   });
   const streamRulesQuery = useStreamRules({ enabled: loadedTabs.rules });
   const schedulerConfigsQuery = useSchedulerConfigs({ enabled: loadedTabs.scheduler });

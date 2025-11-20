@@ -1,4 +1,18 @@
-const TOKEN_KEY = 'trend-auth-token';
+function getEnvTokenKey(): string | undefined {
+  if (
+    typeof import.meta !== 'undefined' &&
+    (import.meta as any).env?.VITE_AUTH_TOKEN_KEY
+  ) {
+    return String((import.meta as any).env.VITE_AUTH_TOKEN_KEY);
+  }
+  return undefined;
+}
+
+const TOKEN_KEY =
+  getEnvTokenKey() ||
+  (typeof window !== 'undefined'
+    ? `${window.location.hostname}-auth-token`
+    : 'auth-token');
 
 export function getStoredToken(): string {
   if (typeof window === 'undefined') {

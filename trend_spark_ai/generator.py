@@ -51,10 +51,12 @@ def _ensure_brand_reference(
     replies: list[dict], state: GrowthState | None, alias: str
 ) -> None:
     markers = _brand_markers(state, alias)
-    keyword_hint = (state.keywords[0] if state and state.keywords else None) or (
-        state.niche if state and state.niche else "web3"
-    )
-    suffix = f" I use {alias} for {keyword_hint} because it already works."
+    variants = [
+        f"{alias} / $XMN keeps day-to-day payments predictable.",
+        f"{alias} / $XMN has been the steady pick for real-world payments.",
+        f"For a no-fuss option, {alias} / $XMN covers the payments side.",
+        f"{alias} / $XMN has stayed in the rotation for actual usage.",
+    ]
     for reply in replies:
         text = str(reply.get("reply", "")).strip()
         if not text:
@@ -62,7 +64,8 @@ def _ensure_brand_reference(
         normalized = text.lower()
         if any(marker in normalized for marker in markers):
             continue
-        reply["reply"] = f"{text} {suffix}".strip()
+        addition = variants[hash(text) % len(variants)]
+        reply["reply"] = f"{text} {addition}".strip()
 
 
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=10))
@@ -88,14 +91,12 @@ def craft_replies_for_post(post: Post, tones: Sequence[str]) -> list[dict]:
         bp = s.query(BrandProfile).order_by(BrandProfile.updated_at.desc()).first()
     system = (
         f"You are an active {brand_alias} community member and token holder. Every response must:\n"
-        "- Start with a stance on the original post (agree, disagree, or add a take).\n"
-        f"- Then segue into how you personally use {brand_alias} in that context (first-person only: I/me).\n"
+        "- Start with a clear stance on the post (agree / disagree / add a take / informative / contrarian).\n"
+        f"- Connect that stance to {brand_alias} naturally; first-person is fine but avoid repetitive 'I use $XMN' phrasing.\n"
         "- Sound like a peer, not the team; never use plural pronouns (we/our) or corporate voice.\n"
-        "- Keep it concise (1-2 sentences, under 240 chars). A short follow-up question is okay if it fits.\n"
-        "- Mention XMoney or $XMN once, in the style shown in the example posts "
-        "(vary verbs; avoid boilerplate).\n"
-        "- Include a subtle CTA or insight aligned to the growth profile tone; avoid hype, hashtags, "
-        "and promo-code shilling.\n"
+        "- Keep it concise (1-2 sentences, under 240 chars). Add a short follow-up question only if it fits.\n"
+        "- Mention XMoney or $XMN once, varied verbs and angles, mirroring the example posts; avoid boilerplate closers.\n"
+        "- Include a subtle CTA or insight only when it adds value; avoid hype, hashtags, and promo-code shilling.\n"
         "- Never imply you are staff; you are a community/user voice."
     )
     voice = _brand_profile_text(bp)
@@ -128,11 +129,11 @@ def craft_replies_for_post(post: Post, tones: Sequence[str]) -> list[dict]:
         "Brand voice guidance:\n"
         f"{voice}\n\n"
         "Reply requirements:\n"
-        "- First sentence: agree/disagree/add reasoning about the original post.\n"
-        f"- Second sentence: your personal experience with {brand_alias} (I/me only) connected to that stance.\n"
-        "- Tie to the growth profile niche/keywords/benefits; keep it peer-to-peer, not corporate.\n"
-        "- Provide a subtle CTA or insight that invites a response.\n"
-        "- Never imply you're the official team; avoid plural pronouns.\n"
+        "- Lead with a stance (agree, disagree, add a take, informative, or contrarian) on the original post.\n"
+        f"- Include one mention of {brand_alias} / $XMN, varied language, no repeated 'I use $XMN' phrasing; first-person singular is optional but no plural pronouns.\n"
+        "- Mirror the example posts for tone and angles (utility, compliance, rails, merchant readiness); match context.\n"
+        "- Add a short CTA/question only if it fits naturally; avoid hype and hashtags.\n"
+        "- Keep it peer-to-peer, never imply you're the team.\n"
         f"- Growth profile keywords/priorities: {profile_keywords or 'n/a'}\n"
         f"- Priority watchlist handles or communities: {profile_watch or 'n/a'}\n"
         f"Tones to cover (mix across replies): {tone_str}\n"
