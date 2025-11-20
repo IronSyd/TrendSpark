@@ -132,10 +132,8 @@ def craft_replies_for_post(post: Post, tones: Sequence[str]) -> list[dict]:
         f"{voice}\n\n"
         "Reply requirements:\n"
         "- Lead with a stance (agree, disagree, add a take, informative, or contrarian) on the original post.\n"
-        (
-            f"- Include one mention of {brand_alias} / $XMN, varied language, no repeated 'I use $XMN' phrasing; "
-            "first-person singular is optional but no plural pronouns.\n"
-        )
+        f"- Include one mention of {brand_alias} / $XMN, varied language, no repeated 'I use $XMN' phrasing; "
+        "first-person singular is optional but no plural pronouns.\n"
         "- Mirror the example posts for tone and angles (utility, compliance, rails, merchant readiness); "
         "match context.\n"
         "- Add a short CTA/question only if it fits naturally; avoid hype and hashtags.\n"
