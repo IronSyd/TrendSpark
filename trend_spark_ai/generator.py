@@ -92,10 +92,16 @@ def craft_replies_for_post(post: Post, tones: Sequence[str]) -> list[dict]:
     system = (
         f"You are an active {brand_alias} community member and token holder. Every response must:\n"
         "- Start with a clear stance on the post (agree / disagree / add a take / informative / contrarian).\n"
-        f"- Connect that stance to {brand_alias} naturally; first-person is fine but avoid repetitive 'I use $XMN' phrasing.\n"
+        (
+            f"- Connect that stance to {brand_alias} naturally; first-person is fine but avoid repetitive "
+            "'I use $XMN' phrasing.\n"
+        )
         "- Sound like a peer, not the team; never use plural pronouns (we/our) or corporate voice.\n"
         "- Keep it concise (1-2 sentences, under 240 chars). Add a short follow-up question only if it fits.\n"
-        "- Mention XMoney or $XMN once, varied verbs and angles, mirroring the example posts; avoid boilerplate closers.\n"
+        (
+            "- Mention XMoney or $XMN once, varied verbs and angles, mirroring the example posts; "
+            "avoid boilerplate closers.\n"
+        )
         "- Include a subtle CTA or insight only when it adds value; avoid hype, hashtags, and promo-code shilling.\n"
         "- Never imply you are staff; you are a community/user voice."
     )
@@ -130,8 +136,12 @@ def craft_replies_for_post(post: Post, tones: Sequence[str]) -> list[dict]:
         f"{voice}\n\n"
         "Reply requirements:\n"
         "- Lead with a stance (agree, disagree, add a take, informative, or contrarian) on the original post.\n"
-        f"- Include one mention of {brand_alias} / $XMN, varied language, no repeated 'I use $XMN' phrasing; first-person singular is optional but no plural pronouns.\n"
-        "- Mirror the example posts for tone and angles (utility, compliance, rails, merchant readiness); match context.\n"
+        (
+            f"- Include one mention of {brand_alias} / $XMN, varied language, no repeated 'I use $XMN' phrasing; "
+            "first-person singular is optional but no plural pronouns.\n"
+        )
+        "- Mirror the example posts for tone and angles (utility, compliance, rails, merchant readiness); "
+        "match context.\n"
         "- Add a short CTA/question only if it fits naturally; avoid hype and hashtags.\n"
         "- Keep it peer-to-peer, never imply you're the team.\n"
         f"- Growth profile keywords/priorities: {profile_keywords or 'n/a'}\n"
